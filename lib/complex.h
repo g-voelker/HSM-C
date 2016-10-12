@@ -1,0 +1,33 @@
+typedef struct DCOMPLEX {double r,i;} dcomplex;
+typedef struct ZOMPLEX {double re,im;} zomplex; 
+
+extern double CReal(dcomplex z);
+extern double CImag(dcomplex z);
+extern dcomplex Cadd(dcomplex z1, dcomplex z2);
+extern dcomplex Csub(dcomplex z1, dcomplex z2);
+extern dcomplex Cmul(dcomplex z1, dcomplex z2);
+extern dcomplex Complex(double x1, double x2);
+extern dcomplex Conjg(dcomplex z);
+extern dcomplex Cdiv(dcomplex z1,dcomplex z2);
+extern double Cabssqr(dcomplex z);
+extern double Cabs(dcomplex z);
+extern dcomplex Csqrt(dcomplex z);
+extern dcomplex Cexp(dcomplex z);
+extern dcomplex Crpow(double x, double p);
+extern dcomplex RCmul(double x, dcomplex z);
+extern double Cnorm(dcomplex z);
+
+extern zomplex Zadd(zomplex z1, zomplex z2);
+extern zomplex Zsub(zomplex z1, zomplex z2);
+extern zomplex Zmul(zomplex z1, zomplex z2);
+extern zomplex Zomplex(double x1, double x2);
+extern zomplex Zonjg(zomplex z);
+extern zomplex Zdiv(zomplex z1,zomplex z2);
+extern double Zabssqr(zomplex z);
+extern double Zabs(zomplex z);
+extern zomplex Zsqrt(zomplex z);
+extern zomplex Zexp(zomplex z);
+extern zomplex Zrpow(double x, double p);
+extern zomplex RZmul(double x, zomplex z);
+extern zomplex Zconjg(zomplex z);
+extern double Znorm(zomplex z);
