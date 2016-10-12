@@ -2,13 +2,18 @@
 #define YEAR 2009
 
 // bounding box
-#define LATMIN 48
-#define LATMAX 52
-#define LONMIN 32
-#define LONMIN 36
+//#define LATMIN 48
+//#define LATMAX 52
+//#define LONMIN 32
+//#define LONMAX 36
+
+#define LATMIN 51
+#define LATMAX 55
+#define LONMIN 7
+#define LONMAX 11
 
 // flags
-#define DBGFLG 2
+#define DBGFLG 3
 
 // paths to data;
 // years are replaced with %d

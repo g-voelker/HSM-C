@@ -5,6 +5,8 @@
 #include <stdio.h>
 #include "input.h"
 #include "header.h"
+#include "../lib/complex.h"
+#include "../lib/alloc_space.h"
 
 void correct(double *input, int length){
   /* data arrays in grib files are averages over periodes
@@ -19,10 +21,10 @@ void correct(double *input, int length){
    * corrects the array in place.
    */
   
-  double temp[] = input;
+  double *temp = input;
   int nn;
   for (nn=1; nn<length; nn++) {
-    input[nn] = temp[n]*(nn%6+1) - temp[nn-1]*(nn%6);
+    input[nn] = temp[nn]*(nn%6+1) - temp[nn-1]*(nn%6);
   }
   free(temp);
 }
@@ -41,17 +43,19 @@ void correct(double *input, int length){
 void getdata(int nlat, int nlon, int leap,
              double *time, double *mld,
              double *taux, double *tauy ){
-  int nmonth, retval, pos[2], ncID, dataID, leap, nn;
+  int nmonth, retval, ncID, dataID, nn, mm;
+  size_t pos[2];
   double *mmld, *mtime;
+  char *filepath[MAXCHARLEN];
   
-  pos[1]  = nlat;
-  pos[0]  = nlon;
-  mmld     = dvector(0,13)
-  mtime   = dvector(0,13)
+  pos[1]  = (size_t) nlat;
+  pos[0]  = (size_t) nlon;
+  mmld     = dvector(0,13);
+  mtime   = dvector(0,13);
   
   // load mixed layer depth
   for (nmonth=1; nmonth<=12; nmonth++){
-    char filepath[] = MLDPATH % nmonth;
+    sprintf(filepath, MLDPATH, nmonth);
     // open regridded netCDF file
     if ((retval = nc_open(filepath, NC_NOWRITE, &ncID))) ERR(retval);
     // get id of dataset
@@ -81,7 +85,7 @@ void getdata(int nlat, int nlon, int leap,
   mtime[12] = (334 + leap)*24 + 31/2*24;
   mtime[13] = (365 + leap)*24 + 31/2*24;
   
-  for (nn=0;nn<=8760+leap*24;n++){
+  for (nn=0;nn<=8760+leap*24;nn++){
     // set time entry (iterates over hours)
     time[nn]  = nn;
     

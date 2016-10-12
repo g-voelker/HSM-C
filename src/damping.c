@@ -1,7 +1,8 @@
 /* computes the latitude dependent damping coefficient for the 
  * slab model after Pollard and Millard 1970 */
-#include <bits/mathcalls.h>
-#include "constants.h"
+//#include <bits/mathcalls.h>
+#include <math.h>
+#include "../lib/constants.h"
 
 double damping(double lat) {
   /* this is set to 1/5 days for North Atlantic
@@ -12,7 +13,7 @@ double damping(double lat) {
   return r0;
 }
 
-double coriolis{double lat){
+double coriolis(double lat) {
   /* computes the Coriolis frequency at a given latitude */
   double f0, Om;
   Om  = 7.2921150e-5;

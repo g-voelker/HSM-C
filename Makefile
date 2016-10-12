@@ -1,5 +1,5 @@
 THISDIR = src
-LIBDIR = ../../../lib
+LIBDIR = lib
 
 ALLOC_SPACE = $(LIBDIR)/alloc_space
 COMPLEX = $(LIBDIR)/complex
@@ -8,16 +8,16 @@ INCL	= /usr/include
 NETCDF = $(INCL)/netcdf
 
 
-AOFILES = main.o \
-	lsm.o \
+AOFILES = $(THISDIR)/main.o \
+	$(THISDIR)/lsm.o \
 	$(ALLOC_SPACE).o $(COMPLEX).o
-ACFILES = main.c  \
-	lsm.c \
+ACFILES = $(THISDIR)/main.c  \
+	$(THISDIR)/lsm.c \
 	$(ALLOC_SPACE).c $(COMPLEX).c
 
-BASEH = $(COMPLEX).h $(ALLOC_SPACE).h 
+BASEH = $(COMPLEX).h $(ALLOC_SPACE).h $(THISDIR)/header.h
 
-MAINH = $(BASEH) lsm.h
+MAINH = $(BASEH) $(THISDIR)/lsm.h
 
 LSMH	= $(BASEH) $(NETCDF).h
 
@@ -39,10 +39,10 @@ clean: rm -f *.o
 eis3.1: $(AOFILES)
 	$(CC) $(OPTFLAGS) $(AOFILES) -o eis3.1 $(LIBFLAGS) $(MFLAGS)
 
-main.o: main.c $(MAINH)
+main.o: $(THISDIR)/main.c $(MAINH)
 	$(CC) $(OPTFLAGS) $(CFLAGS) main.c $(LIBFLAGS)
 
-lsm.o: lsm.c $(LSMH)
+lsm.o: $(THISDIR)/lsm.c $(LSMH)
 	$(CC) $(OPTFLAGS) $(CFLAGS) lsm.c $(LIBFLAGS)
 
 
