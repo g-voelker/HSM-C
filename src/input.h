@@ -7,15 +7,15 @@
 //#define LONMIN 32
 //#define LONMAX 36
 
-#define LATMIN 51
-#define LATMAX 55
-#define LONMIN 7
-#define LONMAX 11
+#define LATMIN 0
+#define LATMAX 60
+#define LONMIN 0
+#define LONMAX 360
 
 // flags
 #define DBGFLG 3
 
-// paths to data;
+// paths to dynamic data;
 // years are replaced with %d
 // months are replaced with %02d
 #define MLDPATH "/run/media/georg/TRANSCEND/EIS2/MIMOC/MIMOC_ML_v2.2_CT_SA_MLP_month%02d_regrid.nc"

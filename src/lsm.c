@@ -6,23 +6,23 @@
 #include <netcdf.h>
 #include <stdlib.h>
 
-struct dat {
+struct dat2D {
   int nlat, nlon;
   double *lat, *lon;
   double **data;
 };
 
-struct dat lsm(char *filename) {
+struct dat2D lsm(char *filename) {
 
   // initialize variables
-  int dataID, latID, lonID, ncID;
+  int dataID, latID, lonID, ncID, nn, mm;
   size_t NLAT, NLON;
-  double *lat, *lon, ***data;
+  double *lat, *latd, *lon, *data, **mask;
 
   // error handling, dimensions
   int retval, latDimID[1], lonDimID[1];
   char latDimName[NC_MAX_NAME + 1], lonDimName[NC_MAX_NAME + 1];
-  struct dat lsm;
+  struct dat2D lsm;
 
   if (DBGFLG>2) { printf("lsm: open netcdf file\n"); fflush(NULL);}
 
@@ -44,58 +44,43 @@ struct dat lsm(char *filename) {
   if ((retval = nc_inq_dim (ncID, latDimID[0], latDimName, &NLAT))) ERR(retval);
   if ((retval = nc_inq_dim (ncID, lonDimID[0], lonDimName, &NLON))) ERR(retval);
 
-  int datadimID[3], nn, ndim[1];
-  size_t datadim;
-  char datadimName[NC_MAX_NAME + 1];
-  if ((retval = nc_inq_vardimid (ncID, dataID, datadimID))) ERR(retval);
-
-//  for (nn=0; nn<=2; nn++) {
-//    if ((retval = nc_inq_dim(ncID, datadimID[nn], datadimName, &datadim))) ERR(retval);
-//    printf(datadimName);printf(": ");fflush(NULL);
-//    printf("%d\n", datadim);
-//    fflush(NULL);
-//  }
-
   if (DBGFLG>2) { printf("lsm: allocate space\n"); fflush(NULL);}
   
   // allocate space for vectors
+  latd = dvector(0, NLAT - 1);
   lat = dvector(0, NLAT - 1);
   lon = dvector(0, NLON - 1);
-  data = dmatrix3(0, 0, 0, NLAT - 1, 0, NLON - 1);
-  free_dvector(lat, 0, NLAT - 1);
-  free_dvector(lon, 0, NLON - 1);
-  free_dmatrix3(data, 0, 0, 0, NLAT - 1, 0, NLON - 1);
-
-  printf("Das wars schon");
-
-  lat = dvector(0, NLAT - 1);
-  lon = dvector(0, NLON - 1);
-  data = dmatrix3(0, 0, 0, NLAT - 1, 0, NLON - 1);
-
-//  double data[1][NLAT][NLON];
+  data = dvector(0, NLAT*NLON - 1);
+  mask = dmatrix2(0, NLON - 1, 0, NLAT - 1);
 
   if (DBGFLG>2) { printf("lsm: read land sea mask\n"); fflush(NULL);}
 
-  size_t vstart[] = {0, 0, 0};
-  size_t vlen[] = {1, NLAT - 1, NLON - 1};
-  ptrdiff_t stride[] = {1, 1, 1};
-
   // read data arrays
-  if ((retval = nc_get_var_double(ncID, latID, &lat[0]))) ERR(retval);
+  if ((retval = nc_get_var_double(ncID, latID, &latd[0]))) ERR(retval);
   if ((retval = nc_get_var_double(ncID, lonID, &lon[0]))) ERR(retval);
-  if ((retval = nc_get_vars_double(ncID, dataID, vstart, vlen, stride, &data[0][0][0]))) ERR(retval);
+  if ((retval = nc_get_var_double(ncID, dataID, &data[0]))) ERR(retval);
+
+
+
+  for (nn=0; nn<NLAT; nn++){
+    lat[NLAT - 1 - nn] = latd[nn];
+    for (mm=0; mm<NLON; mm++) {
+      mask[mm][NLAT - 1 - nn] = data[mm + nn * NLON];
+    }
+  }
 
   if (DBGFLG>2) { printf("lsm: close netcdf file\n"); fflush(NULL);}
 
   // close netcdf file
   if ((retval = nc_close(ncID))) ERR(retval);
 
-  lsm.nlat = NLAT;
-  lsm.nlon = NLON;
+  lsm.nlat = (int) NLAT;
+  lsm.nlon = (int) NLON;
   lsm.lat = lat;
   lsm.lon = lon;
-  lsm.data = data[0];
+  lsm.data = mask;
 
+  // pointers are assigned to struct so can't free them.
 //  free_dvector(lat, 0, NLAT - 1);
 //  free_dvector(lon, 0, NLON - 1);
 //  free_dmatrix3(data, 0, 0, 0, NLAT - 1, 0, NLON - 1);

@@ -1,6 +1,5 @@
 #include <stdio.h>
 #include <math.h>
-//#include <netcdf.h>
 #include "../lib/complex.h"
 #include "../lib/alloc_space.h"
 //#include "constants.h"
@@ -8,7 +7,6 @@
 //#include "damping.h"
 #include "lsm.h"
 #include "input.h"
-#include "header.h"
 
 /*
 void slab(int year, int nlat, int nlon) {
@@ -28,7 +26,7 @@ void slab(int year, int nlat, int nlon) {
   // open land sea mask
 }*/
 
-struct dat {
+struct dat2D {
   int nlat, nlon;
   double *lat, *lon;
   double **data;
@@ -57,7 +55,7 @@ int main(void) {
     printf("main: set land sea mask\n");
     fflush(NULL);
   }
-  struct dat lsmask = lsm(lsmfile);
+  struct dat2D lsmask = lsm(lsmfile);
 
   if (DBGFLG>1) {printf("main: get subset\n"); fflush(NULL);}
   NLATMIN = NLATMAX = NLONMIN = NLONMAX = 0;
@@ -84,7 +82,8 @@ int main(void) {
     }
   }
 
-//  printf("%.2f; %.2f; %.2f; %.2f;\n", lsmask.lat[NLATMIN], lsmask.lat[NLATMAX], lsmask.lon[NLONMIN], lsmask.lon[NLONMAX]);
+  printf("%.2d; %.2d; %.2d; %.2d;\n", NLATMIN, NLATMAX, NLONMIN, NLONMAX);
+  printf("%.2f; %.2f; %.2f; %.2f;\n", lsmask.lat[NLATMIN], lsmask.lat[NLATMAX], lsmask.lon[NLONMIN], lsmask.lon[NLONMAX]);
 
   if (DBGFLG>1) {printf("main: begin loop over points\n"); fflush(NULL);}
   // set pointers for loop
@@ -104,14 +103,11 @@ int main(void) {
   taux  = dvector(0, 8760 + leap * 24);
   tauy  = dvector(0, 8760 + leap * 24);
 
-  // note: latitudes are sorted the wrong way around.
-  for (nn=NLATMAX; nn<=NLATMIN; nn++){
+  fflush(NULL);
+
+  for (nn=NLATMIN; nn<=NLATMAX; nn++){
     for (mm=NLONMIN; mm<=NLONMAX; mm++){
-      if (mm==NLONMAX){
-        printf("%d\n", lsmask.data[nn][mm]);fflush(NULL);
-      } else {
-        printf("%d ", lsmask.data[nn][mm]);fflush(NULL);
-      }
+
       // getdata(nn, mm, time, mld, taux, tauy);
       // get mld
       // interpolate mld
