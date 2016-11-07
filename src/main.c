@@ -5,6 +5,7 @@
 //#include "constants.h"
 //#include "macros.h"
 //#include "damping.h"
+#include "getdata.h"
 #include "lsm.h"
 #include "input.h"
 
@@ -26,10 +27,23 @@ void slab(int year, int nlat, int nlon) {
   // open land sea mask
 }*/
 
+// define different structures
+struct dat1D {
+  int ntime;
+  double *time;
+  double *data;
+};
+
 struct dat2D {
   int nlat, nlon;
   double *lat, *lon;
   double **data;
+};
+
+struct dat3D {
+  int nt, nlat, nlon;
+  double *lat, *lon, *time;
+  double ***data;
 };
 
 int main(void) {
@@ -41,7 +55,7 @@ int main(void) {
   int nn, mm;
 
   // land sea mask related variables
-  char lsmfile[] = "static/lsm-hres.nc";
+  char lsmfile[] = "../static/lsm-hres.nc";
 
   // subsetting related variables
   int NLATMIN, NLATMAX, NLONMIN, NLONMAX;
@@ -82,10 +96,14 @@ int main(void) {
     }
   }
 
-  printf("%.2d; %.2d; %.2d; %.2d;\n", NLATMIN, NLATMAX, NLONMIN, NLONMAX);
-  printf("%.2f; %.2f; %.2f; %.2f;\n", lsmask.lat[NLATMIN], lsmask.lat[NLATMAX], lsmask.lon[NLONMIN], lsmask.lon[NLONMAX]);
-
-  if (DBGFLG>1) {printf("main: begin loop over points\n"); fflush(NULL);}
+  if (DBGFLG>1) {
+    printf("main: subset boundaries are defined by:\n");
+    printf("     (latmin, latmax, lonmin, lonmax):\n");
+    printf("      %.2f; %.2f; %.2f; %.2f;\n",
+           lsmask.lat[NLATMIN], lsmask.lat[NLATMAX], lsmask.lon[NLONMIN], lsmask.lon[NLONMAX]);
+    printf("main: begin loop over points\n");
+    fflush(NULL);
+  }
   // set pointers for loop
   // check for leap years
   if (YEAR%4==0){
@@ -108,7 +126,7 @@ int main(void) {
   for (nn=NLATMIN; nn<=NLATMAX; nn++){
     for (mm=NLONMIN; mm<=NLONMAX; mm++){
 
-      // getdata(nn, mm, time, mld, taux, tauy);
+      getdata(nn, mm, leap, time, mld, taux, tauy);
       // get mld
       // interpolate mld
       // calculate u and v

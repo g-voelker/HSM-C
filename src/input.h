@@ -1,5 +1,5 @@
 // year to be computed
-#define YEAR 2009
+#define YEAR 1989
 
 // bounding box
 //#define LATMIN 48
