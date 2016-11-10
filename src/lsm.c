@@ -47,11 +47,11 @@ struct dat2D lsm(char *filename) {
   if (DBGFLG>2) { printf("lsm: allocate space\n"); fflush(NULL);}
   
   // allocate space for vectors
-  latd = dvector(0, NLAT - 1);
-  lat = dvector(0, NLAT - 1);
-  lon = dvector(0, NLON - 1);
-  data = dvector(0, NLAT*NLON - 1);
-  mask = dmatrix2(0, NLON - 1, 0, NLAT - 1);
+  latd = dvector(0, (int) NLAT - 1);
+  lat = dvector(0, (int) NLAT - 1);
+  lon = dvector(0, (int) NLON - 1);
+  data = dvector(0, (int) (NLAT*NLON) - 1);
+  mask = dmatrix2(0, (int) NLON - 1, 0, (int) NLAT - 1);
 
   if (DBGFLG>2) { printf("lsm: read land sea mask\n"); fflush(NULL);}
 

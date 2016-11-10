@@ -8,6 +8,8 @@
 #include "header.h"
 #include "../lib/complex.h"
 #include "../lib/alloc_space.h"
+#include <grib_api.h>
+
 
 void correct(double *input, int length){
   /* data arrays in grib files are averages over periodes
@@ -44,14 +46,21 @@ void correct(double *input, int length){
 void getdata(int nlat, int nlon, int leap,
              double *time, double *mld,
              double *taux, double *tauy ){
-  int nmonth, retval, ncID, dataID, nn, mm;
-  size_t pos[2];
+  int nmonth, retval, ncID, dataID, nn, mm, nt;
+  size_t pos[2]={0,0};
   double *mmld, *mtime;
   char filepath[MAXCHARLEN];
   time_t itime[14];
   struct tm tcon;
+  FILE* in = NULL;
+  grib_handle *handle = NULL;
+  char shortName[MAXCHARLEN];
+  int grib_count=0;
+  size_t vlen=MAXCHARLEN;
+  long Ni=0, Nj=0;
 
-  if (DBGFLG>2) { printf("getdata: set time constructor\n"); fflush(NULL);}
+  if (DBGFLG>2) { printf("getdata: set MLD time\n"); fflush(NULL);}
+
   // set basic time constructor
   tcon.tm_year = YEAR - 1900;
   tcon.tm_mon = 0;
@@ -59,20 +68,17 @@ void getdata(int nlat, int nlon, int leap,
   tcon.tm_hour = 0;
   tcon.tm_min = 0;
   tcon.tm_sec = 0;
-  
-  pos[1]  = (size_t) nlat;
-  pos[0]  = (size_t) nlon;
-  mmld     = dvector(0,13);
-  mtime   = dvector(0,13);
 
-  if (DBGFLG>2) { printf("getdata: set MLD time\n"); fflush(NULL);}
+  pos[0]  = (size_t) nlat;
+  pos[1]  = (size_t) nlon;
+
+  mmld     = dvector(0,13);
+
   // set hours of mid months
   tcon.tm_year = YEAR - 1901;
   tcon.tm_mon = 11;
   tcon.tm_mday = 15;
   itime[0] = mktime(&tcon);
-
-  if (DBGFLG>2) { printf("getdata: break point 1\n"); fflush(NULL);}
 
   tcon.tm_year = YEAR - 1900;
   for (nn=1; nn<13; nn++){
@@ -82,20 +88,15 @@ void getdata(int nlat, int nlon, int leap,
     itime[nn] = mktime(&tcon);
   }
 
-  if (DBGFLG>2) { printf("getdata: break point 2\n"); fflush(NULL);}
-
   tcon.tm_year = YEAR - 1899;
   tcon.tm_mon = 0;
   tcon.tm_mday = 15;
   itime[13] = mktime(&tcon);
 
-  if (DBGFLG>2) { printf("getdata: break point 3\n"); fflush(NULL);}
-
-  for (nn=0; nn<14; nn++){
-    printf("%s\n", ctime(&itime[nn]));fflush(NULL);
-  }
-
-  if (DBGFLG>2) { printf("getdata: break point 4\n"); fflush(NULL);}
+//  for (nn=0; nn<14; nn++){
+//    printf("%s\n", ctime(&itime[nn]));fflush(NULL);
+//    printf("%d\n", (int) (itime[nn] - itime[0]));fflush(NULL);
+//  }
 
   if (DBGFLG>2) { printf("getdata: load MLD\n"); fflush(NULL);}
   // load mixed layer depth
@@ -112,44 +113,83 @@ void getdata(int nlat, int nlon, int leap,
   }
   mmld[0]   = mmld[12];
   mmld[13]  = mmld[1];
-  
 
-  mtime[0]  = -31/2*24;
-  mtime[1]  = 31/2*24;
-  mtime[2]  = mtime[1]*2 + (28 + leap)/2*24;
-  mtime[3]  = (59 + leap)*24 + 31/2*24;
-  mtime[4]  = (90 + leap)*24 + 30/2*24;
-  mtime[5]  = (120 + leap)*24 + 31/2*24;
-  mtime[6]  = (151 + leap)*24 + 30/2*24;
-  mtime[7]  = (181 + leap)*24 + 31/2*24;
-  mtime[8]  = (212 + leap)*24 + 31/2*24;
-  mtime[9]  = (243 + leap)*24 + 30/2*24;
-  mtime[10] = (273 + leap)*24 + 31/2*24;
-  mtime[11] = (304 + leap)*24 + 30/2*24;
-  mtime[12] = (334 + leap)*24 + 31/2*24;
-  mtime[13] = (365 + leap)*24 + 31/2*24;
-  
   for (nn=0;nn<=8760+leap*24;nn++){
-    // set time entry (iterates over hours)
-    time[nn]  = nn;
-    
     // check position relative to mid month times
     for (mm=1;mm<=12;mm++) {
-      if (mtime[mm]>time[nn]){
+      if (itime[mm]>time[nn]){
         break;
       }
     }
-    
     // interpolate
     mld[nn]   = (mmld[mm-1] +
                  (mmld[mm]-mmld[mm-1])/
-                 (mtime[mm]-mtime[mm-1])*
-                 (time[nn]-mtime[mm-1]));
+                 (itime[mm]-itime[mm-1])*
+                 (time[nn]-itime[mm-1]));
   }
   
   // load wind stress data
-  
-  
-  
-  
+  if (DBGFLG>2) { printf("getdata: load stress data\n"); fflush(NULL);}
+  // turn on multi message support
+  grib_multi_support_on(0);
+
+//  char value[MAXCHARLEN];
+//  char* name_space="geography";
+//  unsigned long key_iterator_filter_flags=GRIB_KEYS_ITERATOR_ALL_KEYS;
+
+  // iterate over months
+  nt = 0;
+  for (nmonth=1; nmonth<=12; nmonth++) {
+    sprintf(filepath, STRSPATH, YEAR, nmonth);
+    in = fopen(filepath, "r");
+    if (!in) {
+      if (DBGFLG > 2) {
+        printf("getdata: unable to open file %s\n", filepath);
+        fflush(NULL);
+      }
+    }
+    grib_count=0;
+    while ((handle = grib_handle_new_from_file(0,in,&retval)) != NULL){
+      if (grib_count==0) {
+        GRIB_CHECK(grib_get_long(handle, "Ni", &Ni), 0);
+        GRIB_CHECK(grib_get_long(handle, "Nj", &Nj), 0);
+        printf("%d, %d\n", (int) Ni, (int) Nj);fflush(NULL);
+      }
+
+//      grib_keys_iterator* kiter=NULL;
+//      kiter=grib_keys_iterator_new(handle,key_iterator_filter_flags,name_space);
+//      printf("hour = %d\n", grib_count/2);
+
+//      while(grib_keys_iterator_next(kiter)) {
+//        const char *name = grib_keys_iterator_get_name(kiter);
+//        if (strcmp(name, "iScansNegatively") == 0) {
+//          vlen = MAXCHARLEN;
+//          bzero(value, vlen);
+//          GRIB_CHECK(grib_get_string(handle, name, value, &vlen), name);
+//          printf("%s = %s\n", name, value);
+//        }
+//        printf("%s \n",name);
+//      }
+
+//      grib_keys_iterator_delete(kiter);
+
+
+      GRIB_CHECK(grib_get_string(handle, "shortName", shortName, &vlen), "shortName");
+
+      if (strcmp(shortName, "uflx") == 0){
+        GRIB_CHECK(grib_get_double_element (handle, "values", (int) Ni*nlat + nlon, &taux[nt/2]), 0);
+      } else if (strcmp(shortName, "vflx") == 0) {
+        GRIB_CHECK(grib_get_double_element (handle, "values", (int) Ni*nlat + nlon, &tauy[nt/2]), 0);
+      }
+
+      grib_handle_delete(handle);
+      grib_count++;
+      nt++;
+      if ((nt%20)==0) {
+        printf("grib/total count: (%d, %d)\n", grib_count, nt);
+      }
+//      if (grib_count==2){break;}
+    }
+  }
+  if (DBGFLG>2) { printf("getdata: return to main\n"); fflush(NULL);}
 }
