@@ -9,6 +9,7 @@
 #include "../lib/complex.h"
 #include "../lib/alloc_space.h"
 #include <grib_api.h>
+//#include <unistd.h> (sleep)
 
 
 void correct(double *input, int length){
@@ -29,16 +30,15 @@ void correct(double *input, int length){
   for (nn=1; nn<length; nn++) {
     input[nn] = temp[nn]*(nn%6+1) - temp[nn-1]*(nn%6);
   }
-  free(temp);
 }
 
 /* data to get, given nlat, nlon:
  * mld (in m)
  * tau_x (in N/m^2)
  * tau_y (in N/m^2)
- * time axis (in seconds from 1/1/YEAR 00:00:00)
+ * time axis (in seconds from 1/1/1970 00:00:00)
  * 
- * modifications that need to be done:
+ * modifications that are done:
  * interpolate mld to given year's timeline
  * correct stress values as they come in averages
  */
@@ -46,18 +46,20 @@ void correct(double *input, int length){
 void getdata(int nlat, int nlon, int leap,
              double *time, double *mld,
              double *taux, double *tauy ){
-  int nmonth, retval, ncID, dataID, nn, mm, nt;
-  size_t pos[2]={0,0};
-  double *mmld, *mtime;
-  char filepath[MAXCHARLEN];
+  int nmonth, retval, ncID, dataID, timeID, timeDimID, nn, mm, natts[2] = {0,0};
+  size_t pos[2]={0,0}, start[3] = {0, (size_t) nlat, (size_t) nlon}, count[3]={1,1,1};
+  size_t nt;
+  int ntcum = 0;
+  double *mmld, *mtime, offset = 0.0, factor = 1.0;
+  char filepath[MAXCHARLEN], timeDimName[NC_MAX_NAME + 1], attname[MAXCHARLEN];
   time_t itime[14];
   struct tm tcon;
-  FILE* in = NULL;
-  grib_handle *handle = NULL;
-  char shortName[MAXCHARLEN];
-  int grib_count=0;
-  size_t vlen=MAXCHARLEN;
-  long Ni=0, Nj=0;
+//  FILE* in = NULL;
+//  grib_handle *handle = NULL;
+//  char shortName[MAXCHARLEN];
+//  int grib_count=0;
+//  size_t vlen=MAXCHARLEN;
+//  long Ni=0, Nj=0;
 
   if (DBGFLG>2) { printf("getdata: set MLD time\n"); fflush(NULL);}
 
@@ -65,9 +67,13 @@ void getdata(int nlat, int nlon, int leap,
   tcon.tm_year = YEAR - 1900;
   tcon.tm_mon = 0;
   tcon.tm_mday = 0;
+  tcon.tm_wday = 0;
+  tcon.tm_yday = 0;
   tcon.tm_hour = 0;
   tcon.tm_min = 0;
   tcon.tm_sec = 0;
+  tcon.tm_gmtoff = 0;
+  tcon.tm_isdst = 0;
 
   pos[0]  = (size_t) nlat;
   pos[1]  = (size_t) nlon;
@@ -130,66 +136,97 @@ void getdata(int nlat, int nlon, int leap,
   
   // load wind stress data
   if (DBGFLG>2) { printf("getdata: load stress data\n"); fflush(NULL);}
-  // turn on multi message support
-  grib_multi_support_on(0);
-
-//  char value[MAXCHARLEN];
-//  char* name_space="geography";
-//  unsigned long key_iterator_filter_flags=GRIB_KEYS_ITERATOR_ALL_KEYS;
 
   // iterate over months
+
   nt = 0;
-  for (nmonth=1; nmonth<=12; nmonth++) {
+  for (nmonth=1; nmonth<=12; nmonth++) { // this MUST start at 1.
     sprintf(filepath, STRSPATH, YEAR, nmonth);
-    in = fopen(filepath, "r");
-    if (!in) {
-      if (DBGFLG > 2) {
-        printf("getdata: unable to open file %s\n", filepath);
-        fflush(NULL);
+    // open netcdf file
+    if ((retval = nc_open(filepath, NC_NOWRITE, &ncID))) ERR(retval);
+    // get time dimension
+    if ((retval = nc_inq_varid(ncID, "time", &timeID))) ERR(retval);
+    if ((retval = nc_inq_vardimid (ncID, timeID, &timeDimID))) ERR(retval);
+    if ((retval = nc_inq_dim(ncID, timeDimID, timeDimName, &nt))) ERR(retval);
+
+    count[0] = nt;
+    double aux[nt];
+    for (nn=0;nn<nt;nn++){
+      aux[nn]=0.0;
+    }
+
+    // get id of x dataset
+    if ((retval = nc_inq_varid(ncID, "p260062", &dataID))) ERR(retval);
+    // get variable at position (nlon, nlat) and write into array
+    if ((retval = nc_get_vara_double(ncID, dataID, start, count, &aux[0]))) ERR(retval);
+
+
+    // check how many attributes it has
+    if ((retval = nc_inq_varnatts	(ncID, dataID, &natts[0]))) ERR(retval);
+    // iterate over all attributes
+    for (nn=0; nn<natts[0]; nn++){
+      // read attribute name
+      if ((retval = nc_inq_attname(ncID, dataID, nn, &attname[0]))) ERR(retval);
+      // read offset if exists
+      if (strcmp(attname, "add_offset")==0){
+        if ((retval = nc_get_att_double(ncID, dataID, attname, &offset))) ERR(retval);
+      }
+      // read factor if exists
+      if (strcmp(attname, "scale_factor")==0){
+        if ((retval = nc_get_att_double(ncID, dataID, attname, &factor))) ERR(retval);
       }
     }
-    grib_count=0;
-    while ((handle = grib_handle_new_from_file(0,in,&retval)) != NULL){
-      if (grib_count==0) {
-        GRIB_CHECK(grib_get_long(handle, "Ni", &Ni), 0);
-        GRIB_CHECK(grib_get_long(handle, "Nj", &Nj), 0);
-        printf("%d, %d\n", (int) Ni, (int) Nj);fflush(NULL);
-      }
 
-//      grib_keys_iterator* kiter=NULL;
-//      kiter=grib_keys_iterator_new(handle,key_iterator_filter_flags,name_space);
-//      printf("hour = %d\n", grib_count/2);
+    if ((retval = nc_close(ncID))) ERR(retval);
 
-//      while(grib_keys_iterator_next(kiter)) {
-//        const char *name = grib_keys_iterator_get_name(kiter);
-//        if (strcmp(name, "iScansNegatively") == 0) {
-//          vlen = MAXCHARLEN;
-//          bzero(value, vlen);
-//          GRIB_CHECK(grib_get_string(handle, name, value, &vlen), name);
-//          printf("%s = %s\n", name, value);
-//        }
-//        printf("%s \n",name);
-//      }
-
-//      grib_keys_iterator_delete(kiter);
-
-
-      GRIB_CHECK(grib_get_string(handle, "shortName", shortName, &vlen), "shortName");
-
-      if (strcmp(shortName, "uflx") == 0){
-        GRIB_CHECK(grib_get_double_element (handle, "values", (int) Ni*nlat + nlon, &taux[nt/2]), 0);
-      } else if (strcmp(shortName, "vflx") == 0) {
-        GRIB_CHECK(grib_get_double_element (handle, "values", (int) Ni*nlat + nlon, &tauy[nt/2]), 0);
-      }
-
-      grib_handle_delete(handle);
-      grib_count++;
-      nt++;
-      if ((nt%20)==0) {
-        printf("grib/total count: (%d, %d)\n", grib_count, nt);
-      }
-//      if (grib_count==2){break;}
+    // set values according to scaling and offsets
+    for (nn = 0; nn<nt; nn++) {
+      taux[ntcum + nn] = factor * aux[nn] + offset;
     }
+
+    // reset factor and offset
+    offset = 0.0;
+    factor = 1.0;
+
+    if ((retval = nc_open(filepath, NC_NOWRITE, &ncID))) ERR(retval);
+
+    // get id of y dataset
+    if ((retval = nc_inq_varid(ncID, "p260063", &dataID))) ERR(retval);
+    // get variable at position (nlon, nlat) and write into array
+    if ((retval = nc_get_vara_double(ncID, dataID, start, count, &aux[0]))) ERR(retval);
+    // check how many attributes it has
+    if ((retval = nc_inq_varnatts	(ncID, dataID, &natts[0]))) ERR(retval);
+    // iterate over all attributes
+    for (nn=0; nn<natts[0]; nn++) {
+      // read attribute name
+      if ((retval = nc_inq_attname(ncID, dataID, nn, &attname[0]))) ERR(retval);
+      // read offset if exists
+      if (strcmp(attname, "add_offset") == 0) {
+        if ((retval = nc_get_att_double(ncID, dataID, attname, &offset))) ERR(retval);
+      }
+      // read factor if exists
+      if (strcmp(attname, "scale_factor") == 0) {
+        if ((retval = nc_get_att_double(ncID, dataID, attname, &factor))) ERR(retval);
+      }
+    }
+
+    // close nc file
+    if ((retval = nc_close(ncID))) ERR(retval);
+
+    // set values according to scaling and offsets
+    for (nn = 0; nn < nt; nn++) {
+      tauy[ntcum + nn] = factor * aux[nn] + offset;
+    }
+
+    ntcum += (int) nt;
   }
+
+  // correct stress values
+  if (STRSCOR!=0) {
+    if (DBGFLG>2) { printf("getdata: correcting NCEP-CFSR stress data\n"); fflush(NULL);}
+    correct(taux, ntcum);
+    correct(tauy, ntcum);
+  }
+
   if (DBGFLG>2) { printf("getdata: return to main\n"); fflush(NULL);}
 }
