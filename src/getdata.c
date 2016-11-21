@@ -2,14 +2,13 @@
 #include <netcdf.h>
 #include <time.h>
 #include <stdlib.h>
-#include <math.h>
+// #include <math.h>
 #include <stdio.h>
 #include "input.h"
 #include "header.h"
-#include "../lib/complex.h"
-#include "../lib/alloc_space.h"
-#include <grib_api.h>
-//#include <unistd.h> (sleep)
+#include "../lib/dalloc.h"
+// #include <grib_api.h>
+// #include <unistd.h> (sleep)
 
 
 void correct(double *input, int length){
@@ -25,11 +24,20 @@ void correct(double *input, int length){
    * corrects the array in place.
    */
   
-  double *temp = input;
+  double *temp;
+
+  temp = dalloc(temp, (size_t) length);
   int nn;
+
+  for (nn=0; nn<length; nn++){
+    temp[nn] = input[nn];
+  }
+
   for (nn=1; nn<length; nn++) {
     input[nn] = temp[nn]*(nn%6+1) - temp[nn-1]*(nn%6);
   }
+
+  free(temp);
 }
 
 /* data to get, given nlat, nlon:
@@ -50,18 +58,12 @@ void getdata(int nlat, int nlon, int leap,
   size_t pos[2]={0,0}, start[3] = {0, (size_t) nlat, (size_t) nlon}, count[3]={1,1,1};
   size_t nt;
   int ntcum = 0;
-  double *mmld, *mtime, offset = 0.0, factor = 1.0;
+  double *mmld, offset = 0.0, factor = 1.0;
   char filepath[MAXCHARLEN], timeDimName[NC_MAX_NAME + 1], attname[MAXCHARLEN];
   time_t itime[14];
   struct tm tcon;
-//  FILE* in = NULL;
-//  grib_handle *handle = NULL;
-//  char shortName[MAXCHARLEN];
-//  int grib_count=0;
-//  size_t vlen=MAXCHARLEN;
-//  long Ni=0, Nj=0;
 
-  if (DBGFLG>2) { printf("getdata: set MLD time\n"); fflush(NULL);}
+  if (DBGFLG>2) { printf("  getdata: set MLD time\n"); fflush(NULL);}
 
   // set basic time constructor
   tcon.tm_year = YEAR - 1900;
@@ -78,7 +80,7 @@ void getdata(int nlat, int nlon, int leap,
   pos[0]  = (size_t) nlat;
   pos[1]  = (size_t) nlon;
 
-  mmld     = dvector(0,13);
+  mmld = dalloc(mmld, 14);
 
   // set hours of mid months
   tcon.tm_year = YEAR - 1901;
@@ -99,12 +101,7 @@ void getdata(int nlat, int nlon, int leap,
   tcon.tm_mday = 15;
   itime[13] = mktime(&tcon);
 
-//  for (nn=0; nn<14; nn++){
-//    printf("%s\n", ctime(&itime[nn]));fflush(NULL);
-//    printf("%d\n", (int) (itime[nn] - itime[0]));fflush(NULL);
-//  }
-
-  if (DBGFLG>2) { printf("getdata: load MLD\n"); fflush(NULL);}
+  if (DBGFLG>2) { printf("  getdata: load MLD\n"); fflush(NULL);}
   // load mixed layer depth
   for (nmonth=1; nmonth<=12; nmonth++){
     sprintf(filepath, MLDPATH, nmonth);
@@ -120,7 +117,8 @@ void getdata(int nlat, int nlon, int leap,
   mmld[0]   = mmld[12];
   mmld[13]  = mmld[1];
 
-  for (nn=0;nn<=8760+leap*24;nn++){
+  if (DBGFLG>2) { printf("  getdata: interpolate MLD in time\n"); fflush(NULL);}
+  for (nn=0;nn<8760+leap*24;nn++){
     // check position relative to mid month times
     for (mm=1;mm<=12;mm++) {
       if (itime[mm]>time[nn]){
@@ -135,7 +133,7 @@ void getdata(int nlat, int nlon, int leap,
   }
   
   // load wind stress data
-  if (DBGFLG>2) { printf("getdata: load stress data\n"); fflush(NULL);}
+  if (DBGFLG>2) { printf("  getdata: load stress data\n"); fflush(NULL);}
 
   // iterate over months
 
@@ -150,7 +148,8 @@ void getdata(int nlat, int nlon, int leap,
     if ((retval = nc_inq_dim(ncID, timeDimID, timeDimName, &nt))) ERR(retval);
 
     count[0] = nt;
-    double aux[nt];
+    double *aux;
+    aux = dalloc(aux, nt);
     for (nn=0;nn<nt;nn++){
       aux[nn]=0.0;
     }
@@ -219,14 +218,19 @@ void getdata(int nlat, int nlon, int leap,
     }
 
     ntcum += (int) nt;
+
+    // free aux
+    free(aux);
   }
 
   // correct stress values
   if (STRSCOR!=0) {
-    if (DBGFLG>2) { printf("getdata: correcting NCEP-CFSR stress data\n"); fflush(NULL);}
+    if (DBGFLG>2) { printf("  getdata: correcting NCEP-CFSR stress data\n"); fflush(NULL);}
     correct(taux, ntcum);
     correct(tauy, ntcum);
   }
 
-  if (DBGFLG>2) { printf("getdata: return to main\n"); fflush(NULL);}
+  free(mmld);
+
+  if (DBGFLG>2) { printf("  getdata: return to main\n"); fflush(NULL);}
 }

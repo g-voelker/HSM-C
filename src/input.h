@@ -1,19 +1,22 @@
 // year to be computed
 #define YEAR 1996
 
+// constants
+#define RHO 1027
+
 // bounding box
 //#define LATMIN 48
 //#define LATMAX 52
 //#define LONMIN 32
 //#define LONMAX 36
 
-#define LATMIN 37
-#define LATMAX 38
-#define LONMIN 330
-#define LONMAX 331
+#define LATMIN 20
+#define LATMAX 21
+#define LONMIN 310
+#define LONMAX 311
 
 // flags
-#define DBGFLG 3
+#define DBGFLG 2
 #define STRSCOR 1
 
 // paths to dynamic data;

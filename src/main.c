@@ -1,12 +1,16 @@
 #include <stdio.h>
+#include <stdlib.h>
 #include <math.h>
 #include <time.h>
-#include "../lib/complex.h"
-#include "../lib/alloc_space.h"
+#include <fftw3.h>
 //#include "constants.h"
 //#include "macros.h"
-//#include "damping.h"
+#include "../lib/constants.h"
+#include "../lib/dalloc.h"
+#include "damping.h"
+#include "solveode.h"
 #include "getdata.h"
+#include "header.h"
 #include "lsm.h"
 #include "input.h"
 
@@ -28,7 +32,6 @@ void slab(int year, int nlat, int nlon) {
   // open land sea mask
 }*/
 
-// define different structures
 struct dat1D {
   int ntime;
   double *time;
@@ -55,6 +58,9 @@ int main(void) {
   // iterator integers
   int nn, mm;
 
+  // constants
+  double rho0 = RHO, r0, f0;
+
   // land sea mask related variables
   char lsmfile[] = "../static/lsm-hres.nc";
 
@@ -65,6 +71,11 @@ int main(void) {
   // time loop related variables
   int leap;
   struct tm tcon;
+
+  // FFT related variables
+  double *freqs;
+  fftw_complex *aux, *AUX;
+  fftw_plan fft, ifft;
 
   if (DBGFLG > 2) {printf("main: set time axis\n");fflush(NULL);}
 
@@ -135,6 +146,22 @@ int main(void) {
     }
   }
 
+  // prepare FFTs
+  // set frequencies
+  aux = fftw_malloc(sizeof(fftw_complex) * DFFT_LEN);
+  AUX = fftw_malloc(sizeof(fftw_complex) * DFFT_LEN);
+  freqs = (double*) fftw_malloc(sizeof(double) * DFFT_LEN);
+  for (nn=0; nn<DFFT_LEN/2; nn++) {
+    freqs[nn] = nn / DFFT_LEN / 3600 * 2 * PI;
+  }
+  for (nn=DFFT_LEN/2; nn<DFFT_LEN; nn++) {
+    freqs[nn] = (DFFT_LEN - nn) / DFFT_LEN / 3600 * 2 * PI;
+  }
+  if (DBGFLG>2) {printf("main: set fftw plans\n"); fflush(NULL);}
+  // define transforms
+  fft = fftw_plan_dft_1d(DFFT_LEN, aux, AUX, FFTW_FORWARD, FFTW_ESTIMATE);
+  ifft = fftw_plan_dft_1d(DFFT_LEN, AUX, aux, FFTW_BACKWARD, FFTW_ESTIMATE);
+
   if (DBGFLG>1) {
     printf("main: subset boundaries are set by:\n");
     printf("     (latmin, latmax, lonmin, lonmax):\n");
@@ -151,14 +178,32 @@ int main(void) {
     for (mm=NLONMIN; mm<=NLONMAX; mm++){
 //    for (mm=NLONMIN; mm<NLONMIN+1; mm++){
       if (DBGFLG>2) { printf("    (%d, %d)\n", nn, mm); fflush(NULL);}
+      // load stress and mixed layer depth data
       getdata(nn, mm, leap, time, mld, taux, tauy);
-      // get mld
-      // interpolate mld
+      // set damping parameter
+      r0 = damping(lsmask.lat[nn]);
+      // set Coriolis frequency
+      f0 = coriolis(lsmask.lat[nn]);
       // calculate u and v
+      solve(fft, ifft, r0, f0, rho0, leap, taux, tauy, mld, freqs, aux, AUX);
       // write out mld, time, u and v
     }
   }
 
+  if (DBGFLG>2) {printf("main: clean up slab model\n");fflush(NULL);}
+
+  fftw_destroy_plan(fft);
+  fftw_destroy_plan(ifft);
+  fftw_free(aux);
+  fftw_free(AUX);
+
+  if (DBGFLG>1) {printf("main: proceed with hybrid extension\n"); fflush(NULL);}
+
+
+  free(lsmask.lat);
+  free(lsmask.lon);
+  free2(lsmask.data, lsmask.nlon);
+  free(freqs);
 
   return -1;
 }
