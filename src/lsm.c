@@ -2,16 +2,11 @@
 #include <netcdf.h>
 #include <stdlib.h>
 #include "../lib/dalloc.h"
+#include "../lib/structs.h"
 #include "header.h"
 #include "input.h"
 
-struct dat2D {
-  int nlat, nlon;
-  double *lat, *lon;
-  double **data;
-};
-
-struct dat2D lsm(char *filename) {
+dat2d lsm(char *filename) {
 
   // initialize variables
   int dataID, latID, lonID, ncID, nn, mm;
@@ -62,9 +57,9 @@ struct dat2D lsm(char *filename) {
 
 
   for (nn=0; nn<NLAT; nn++){
-    lat[NLAT - 1 - nn] = latd[nn];
+    lat[nn] = latd[nn];
     for (mm=0; mm<NLON; mm++) {
-      mask[mm][NLAT - 1 - nn] = data[mm + nn * NLON];
+      mask[mm][nn] = data[mm + nn * NLON];
     }
   }
 

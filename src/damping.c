@@ -12,16 +12,16 @@ double damping(double lat) {
    * for world wide distribution see Park 2009 */
   double r0;
   /* set r0 in 1/s */
-  r0  = 1/5/86400;
+  r0  = 1.0/5.0/86400.0;
   return r0;
 
 }
 
 double coriolis(double lat) {
-  if (DBGFLG>2) { printf("  corilis: setting local Coriolis frequency\n"); fflush(NULL);}
+  if (DBGFLG>2) { printf("  coriolis: setting local Coriolis frequency\n"); fflush(NULL);}
   /* computes the Coriolis frequency at a given latitude */
   double f0, Om;
   Om  = 7.2921150e-5;
-  f0  = 2*Om*sin(lat*2*PI/360);
+  f0  = 2.0*Om*sin(lat*2.0*PI/360.0);
   return f0;
 }

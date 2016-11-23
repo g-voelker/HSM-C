@@ -5,15 +5,10 @@
 #define RHO 1027
 
 // bounding box
-//#define LATMIN 48
-//#define LATMAX 52
-//#define LONMIN 32
-//#define LONMAX 36
-
 #define LATMIN 20
-#define LATMAX 21
-#define LONMIN 310
-#define LONMAX 311
+#define LATMAX 22
+#define LONMIN 320
+#define LONMAX 322
 
 // flags
 #define DBGFLG 2
@@ -24,3 +19,4 @@
 // months are replaced with %02d
 #define MLDPATH "/run/media/georg/TRANSCEND/EIS2/MIMOC/MIMOC_ML_v2.2_CT_SA_MLP_month%02d_regrid.nc"
 #define STRSPATH "/run/media/georg/TRANSCEND/EIS2/NCEP-CFSR/stress/p2/wndstrs.gdas.%d%02d.fast.nc"
+#define OUTPATH "/run/media/georg/TRANSCEND/EIS2/results/eis3_test/test%02d.nc"

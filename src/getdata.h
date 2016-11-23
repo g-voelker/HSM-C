@@ -5,5 +5,5 @@
 extern void correct(double *input, int length);
 
 extern void getdata(int nlat, int nlon, int leap,
-                    double *time, double *mld,
+                    int *time, double *mld,
                     double *taux, double *tauy );

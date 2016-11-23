@@ -19,7 +19,7 @@ double** dalloc2(double** array, size_t xmax, size_t ymax){
   return(array);
 }
 
-void free2(double** array, size_t xmax){
+void dfree2(double** array, size_t xmax){
   int nn=0;
   for (nn=0; nn<xmax; nn++){
     free(array[nn]);
@@ -39,7 +39,7 @@ double*** dalloc3(double*** array, size_t xmax, size_t ymax, size_t zmax){
   return(array);
 }
 
-void free3(double*** array, size_t xmax, size_t ymax){
+void dfree3(double*** array, size_t xmax, size_t ymax){
   int nn=0, mm=0;
   for (nn=0; nn<xmax; nn++){
     for (mm=0; mm<ymax; mm++){

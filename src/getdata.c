@@ -2,11 +2,10 @@
 #include <netcdf.h>
 #include <time.h>
 #include <stdlib.h>
-// #include <math.h>
 #include <stdio.h>
+#include "../lib/dalloc.h"
 #include "input.h"
 #include "header.h"
-#include "../lib/dalloc.h"
 // #include <grib_api.h>
 // #include <unistd.h> (sleep)
 
@@ -52,7 +51,7 @@ void correct(double *input, int length){
  */
 
 void getdata(int nlat, int nlon, int leap,
-             double *time, double *mld,
+             int *time, double *mld,
              double *taux, double *tauy ){
   int nmonth, retval, ncID, dataID, timeID, timeDimID, nn, mm, natts[2] = {0,0};
   size_t pos[2]={0,0}, start[3] = {0, (size_t) nlat, (size_t) nlon}, count[3]={1,1,1};
@@ -77,6 +76,7 @@ void getdata(int nlat, int nlon, int leap,
   tcon.tm_gmtoff = 0;
   tcon.tm_isdst = 0;
 
+  // take into account the reverse ordering in the mixed layer data
   pos[0]  = (size_t) nlat;
   pos[1]  = (size_t) nlon;
 
@@ -219,7 +219,7 @@ void getdata(int nlat, int nlon, int leap,
 
     ntcum += (int) nt;
 
-    // free aux
+    // free auxiliaries
     free(aux);
   }
 

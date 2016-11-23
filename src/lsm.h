@@ -1,1 +1,1 @@
-extern struct dat2D lsm(char *filename);
+extern dat2d lsm(char *filename);
