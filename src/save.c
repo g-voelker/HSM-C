@@ -15,25 +15,6 @@
 #include "header.h"
 #include "../lib/dalloc.h"
 
-#define UNITS "units"
-#define LONGNAME "long_name"
-
-#define TIME "time"
-#define LATS "latitude"
-#define LONS "longitude"
-#define XVEL "u"
-#define XVEL_LONG "u-velocity component in mixed layer"
-#define YVEL "v"
-#define YVEL_LONG "u-velocity component in mixed layer"
-#define MLD "mld"
-#define MLD_LONG "mixed layer depth"
-
-#define DEGREES_NORTH "degrees_north"
-#define DEGREES_EAST "degrees_east"
-#define HOURS "hours since 1900-01-01 00:00:0.0"
-#define MPS "meter/second"
-#define METER "meter"
-
 int sum(size_t *array, int num){
   int nn;
   size_t sum=0;

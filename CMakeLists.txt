@@ -25,7 +25,7 @@ set(SOURCE_FILES
         src/solveode.h
         src/save.c
         src/save.h
-        src/main.c lib/slicer.c lib/slicer.h)
+        src/main.c lib/slicer.c lib/slicer.h src/divergence.c src/divergence.h)
 
 add_executable(EIS ${SOURCE_FILES})
 

@@ -15,6 +15,7 @@
 #include "header.h"
 #include "lsm.h"
 #include "input.h"
+#include "divergence.h"
 
 /*
 void slab(int year, int nlat, int nlon) {
@@ -165,7 +166,7 @@ int main(void) {
 
   if (DBGFLG>2) {printf("main: init data files\n"); fflush(NULL);}
 
-  // be aware that the lat array is sorted inversely
+  // be aware that the lat array may be sorted inversely
   initnc(&lsmask, time, NLONMIN, NLONMAX + 1, nlatmin, nlatmax + 1, leap);
 
   if (DBGFLG>1) {
@@ -179,6 +180,7 @@ int main(void) {
 
   fflush(NULL);
 
+  // calculate slab model on all points
   for (nn=nlatmin; nn<=nlatmax; nn++){
     for (mm=NLONMIN; mm<=NLONMAX; mm++){
       if (DBGFLG>1) { printf("    (%d, %d)\n", nn, mm); fflush(NULL);}
@@ -200,16 +202,21 @@ int main(void) {
     }
   }
 
-  if (DBGFLG>2) {printf("main: clean up slab model\n");fflush(NULL);}
+  if (DBGFLG>1) {printf("main: proceed with hybrid extension\n"); fflush(NULL);}
+
+  // get mid-point divergences
+
+  divergence(&lsmask, NLONMIN, NLONMAX + 1, nlatmin, nlatmax + 1, leap);
+
+  // get energy fluxes
+
+
+  if (DBGFLG>2) {printf("main: clean up memory\n");fflush(NULL);}
 
   fftw_destroy_plan(fft);
   fftw_destroy_plan(ifft);
   fftw_free(aux);
   fftw_free(AUX);
-
-  if (DBGFLG>1) {printf("main: proceed with hybrid extension\n"); fflush(NULL);}
-
-
   free(lsmask.lat);
   free(lsmask.lon);
   dfree2(lsmask.data, (size_t) lsmask.nlon);

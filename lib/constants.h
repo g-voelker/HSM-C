@@ -1,12 +1,9 @@
-#define MAXFILENAMELEN 40
-
-#define MAX_RAND15 32767.0    /* random numbers from 0 to 2^15 -1 */
-#define MAX_RAND31 2147483647    /* random numbers from 0 to 2^31 -1 */
-#define MAX_RAND32 4294967295    /* random numbers from 0 to 2^32 -1 */
-
-#define PIHF 1.570786326794897 
+#define PIHF 1.570786326794897
 #define PI 3.141592653589793
 #define PI2 6.28318530717959
+
+// earth radius following GRS 1980  (Moritz, 1980)
+#define EARTHRADIUS 6371008.8
 
 #define Root2 1.414213562
 #define Root3 1.7320508
