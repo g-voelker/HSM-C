@@ -11,7 +11,8 @@
 // this value is set to preserve performance while making sure the cutoff is long enough
 // edit only if you know what you do.
 #define DFFT_LEN 10976
-
+#define CHUNK_LAT 2
+#define CHUNK_LON 2
 
 // macros for variable / attribute name space
 #define UNITS "units"

@@ -25,12 +25,14 @@ void divergence(dat2d *lsmask, int nxmin, int nxmax, int nymin, int nymax, int l
 
   // indexing
   int nn, mm, nmonth, nhour;
-  int days[12] = {31, 28 + leap, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31};
+//  int days[12] = {31, 28 + leap, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31};
+  size_t days[12] = {31, 28 + (size_t) leap, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31};
 
   // netcdf
   int retval, ncID, varID[4], dimID[3];
   size_t start[3], count[3], latlen, lonlen;
   char filepath[MAXCHARLEN];
+  size_t chunksize[3] = {28*24, CHUNK_LAT, CHUNK_LON};
 
   start[0] = start[1] = start[2] = 0;
   count[0] = 1;
@@ -54,6 +56,7 @@ void divergence(dat2d *lsmask, int nxmin, int nxmax, int nymin, int nymax, int l
 
   // loop over snap shots
   for (nmonth=0; nmonth< 12; nmonth++){
+    chunksize[0] = days[nmonth]*24;
     sprintf(filepath, OUTPATH, nmonth+1);
     // open netcdf file and read u, v, mld
     if ((retval = nc_open(filepath, NC_WRITE, &ncID))) ERR(retval);
@@ -79,6 +82,7 @@ void divergence(dat2d *lsmask, int nxmin, int nxmax, int nymin, int nymax, int l
 
     // define vertical velocity in data file
     if ((retval = nc_def_var(ncID, ZVEL, NC_DOUBLE, 3, dimID, &varID[3]))) ERR(retval);
+    if ((retval = nc_def_var_chunking(ncID, varID[3], NC_CHUNKED, chunksize))) ERR(retval);
     if ((retval = nc_put_att_text(ncID, varID[3], UNITS, strlen(MPS), MPS))) ERR(retval);
     if ((retval = nc_put_att_text(ncID, varID[3], LONGNAME, strlen(ZVEL_LONG), ZVEL_LONG))) ERR(retval);
 

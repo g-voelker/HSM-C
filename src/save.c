@@ -27,6 +27,7 @@ int sum(size_t *array, int num){
 void initnc(dat2d *lsmask, int* time, int nxmin, int nxmax, int nymin, int nymax, int leap){
   int *timeSliceS, *timeSliceH, varID[3], nn = 0, mm = 0;
   size_t nt = (365 + (size_t) leap) * 24;
+  size_t chunksize[3] = {28*24, CHUNK_LAT, CHUNK_LON};
   int ncID = 0, retval, dimID[3], dimVarID[3];
   char filepath[MAXCHARLEN];
   size_t days[12] = {31, 28 + (size_t) leap, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31};
@@ -44,6 +45,7 @@ void initnc(dat2d *lsmask, int* time, int nxmin, int nxmax, int nymin, int nymax
   // set reference time for time axis
 
   for (nn=0; nn < 12; nn++) {
+    chunksize[0] = days[nn]*24;
     // set filename
     sprintf(filepath, OUTPATH, nn+1);
     // created the file with unlimited dimension
@@ -83,16 +85,19 @@ void initnc(dat2d *lsmask, int* time, int nxmin, int nxmax, int nymin, int nymax
     // define matrices with Fill Values that are replaced later
     // u component
     if ((retval = nc_def_var(ncID, XVEL, NC_DOUBLE, 3, dimID, &varID[0]))) ERR(retval);
+    if ((retval = nc_def_var_chunking(ncID, varID[0], NC_CHUNKED, chunksize))) ERR(retval);
     if ((retval = nc_put_att_text(ncID, varID[0], UNITS, strlen(MPS), MPS))) ERR(retval);
     if ((retval = nc_put_att_text(ncID, varID[0], LONGNAME, strlen(XVEL_LONG), XVEL_LONG))) ERR(retval);
 
     // v component
     if ((retval = nc_def_var(ncID, YVEL, NC_DOUBLE, 3, dimID, &varID[1]))) ERR(retval);
+    if ((retval = nc_def_var_chunking(ncID, varID[1], NC_CHUNKED, chunksize))) ERR(retval);
     if ((retval = nc_put_att_text(ncID, varID[1], UNITS, strlen(MPS), MPS))) ERR(retval);
     if ((retval = nc_put_att_text(ncID, varID[1], LONGNAME, strlen(YVEL_LONG), YVEL_LONG))) ERR(retval);
 
     // mixed layer depth
     if ((retval = nc_def_var(ncID, MLD, NC_DOUBLE, 3, dimID, &varID[2]))) ERR(retval);
+    if ((retval = nc_def_var_chunking(ncID, varID[2], NC_CHUNKED, chunksize))) ERR(retval);
     if ((retval = nc_put_att_text(ncID, varID[2], UNITS, strlen(METER), METER))) ERR(retval);
     if ((retval = nc_put_att_text(ncID, varID[2], LONGNAME, strlen(MLD_LONG), MLD_LONG))) ERR(retval);
 
