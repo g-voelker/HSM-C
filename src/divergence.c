@@ -9,6 +9,7 @@
 #include "../lib/structs.h"
 #include "../lib/dalloc.h"
 #include "../lib/constants.h"
+#include "../lib/macros.h"
 #include "header.h"
 #include "input.h"
 
@@ -21,11 +22,11 @@ double distance(double lon1, double lon2, double lat1, double lat2){
 
 void divergence(dat2d *lsmask, int nxmin, int nxmax, int nymin, int nymax, int leap){
   // aux arrays
-  double **uu, **vv, **ww, **mld, *aux, dys[nymax - nymin - 1], dx[nxmax - nxmin];
+  double **uu, **vv, *aux, dys[nymax - nymin - 1], dx[nymax - nymin];
+  double *vc, *vn, *vs, *uc, *ue, *uw, *ww, *mld;
 
   // indexing
   int nn, mm, nmonth, nhour;
-//  int days[12] = {31, 28 + leap, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31};
   size_t days[12] = {31, 28 + (size_t) leap, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31};
 
   // netcdf
@@ -35,28 +36,31 @@ void divergence(dat2d *lsmask, int nxmin, int nxmax, int nymin, int nymax, int l
   size_t chunksize[3] = {28*24, CHUNK_LAT, CHUNK_LON};
 
   start[0] = start[1] = start[2] = 0;
-  count[0] = 1;
-  count[1] = (size_t) (nymax-nymin);
-  count[2] = (size_t) (nxmax-nxmin);
-
-  // allocate aux arrays
-  uu = dalloc2(uu, (size_t) (nymax-nymin), (size_t) (nxmax-nxmin));
-  vv = dalloc2(vv, (size_t) (nymax-nymin), (size_t) (nxmax-nxmin));
-  ww = dalloc2(ww, (size_t) (nymax-nymin), (size_t) (nxmax-nxmin));
-  mld = dalloc2(mld, (size_t) (nymax-nymin), (size_t) (nxmax-nxmin));
-  aux = dalloc(aux, (size_t) ((nymax-nymin)*(nxmax-nxmin)));
+  count[0] = count[1] = count[2] = 1;
 
   // calculate distance grid
   for (nn=nymin; nn<(nymax-1); nn++){ // on staggered grid
-    dys[nn-nymin] = distance(0.0, 0.0, lsmask->lat[nn], lsmask->lat[nn+1]);
+    dys[nn-nymin] = dsgn(lsmask->lat[nn+1] - lsmask->lat[nn]) * distance(0.0, 0.0, lsmask->lat[nn], lsmask->lat[nn+1]);
   }
   for (nn=nymin; nn<nymax; nn++){
-    dx[nn-nymin] = distance(lsmask->lon[0], lsmask->lon[1], lsmask->lat[nn], lsmask->lat[nn]);
+    dx[nn-nymin] = dsgn(lsmask->lon[1] - lsmask->lon[0]) * distance(lsmask->lon[0], lsmask->lon[1], lsmask->lat[nn], lsmask->lat[nn]);
   }
 
   // loop over snap shots
   for (nmonth=0; nmonth< 12; nmonth++){
-    chunksize[0] = days[nmonth]*24;
+    // set count and chunksize in time
+    count[0] = chunksize[0] = days[nmonth]*24;
+
+    // allocate auxiliary arrays
+    vc = dalloc(vc, days[nmonth]*24);
+    vn = dalloc(vn, days[nmonth]*24);
+    vs = dalloc(vs, days[nmonth]*24);
+    uc = dalloc(uc, days[nmonth]*24);
+    ue = dalloc(ue, days[nmonth]*24);
+    uw = dalloc(uw, days[nmonth]*24);
+    ww = dalloc(ww, days[nmonth]*24);
+    mld = dalloc(mld, days[nmonth]*24);
+
     sprintf(filepath, OUTPATH, nmonth+1);
     // open netcdf file and read u, v, mld
     if ((retval = nc_open(filepath, NC_WRITE, &ncID))) ERR(retval);
@@ -86,73 +90,51 @@ void divergence(dat2d *lsmask, int nxmin, int nxmax, int nymin, int nymax, int l
     if ((retval = nc_put_att_text(ncID, varID[3], UNITS, strlen(MPS), MPS))) ERR(retval);
     if ((retval = nc_put_att_text(ncID, varID[3], LONGNAME, strlen(ZVEL_LONG), ZVEL_LONG))) ERR(retval);
 
-    for (nhour=0; nhour< (days[nmonth] * 24); nhour++) {
-      // read variables u, v and mld
-      start[0] = (size_t) nhour;
-      if ((retval = nc_get_vara_double(ncID, varID[0], start, count, &aux[0]))) ERR(retval);
-      for(nn=0; nn<(nymax-nymin); nn++){
-        for (mm=0; mm<(nxmax-nxmin); mm++){
-          uu[nn][mm] = aux[(nn)*(nxmax-nxmin) + (mm)];
-        }
-      }
-      if ((retval = nc_get_vara_double(ncID, varID[1], start, count, &aux[0]))) ERR(retval);
-      for(nn=0; nn<(nymax-nymin); nn++){
-        for (mm=0; mm<(nxmax-nxmin); mm++){
-          vv[nn][mm] = aux[(nn)*(nxmax-nxmin) + (mm)];
-        }
-      }
-      if ((retval = nc_get_vara_double(ncID, varID[2], start, count, &aux[0]))) ERR(retval);
-      for(nn=0; nn<(nymax-nymin); nn++){
-        for (mm=0; mm<(nxmax-nxmin); mm++){
-          mld[nn][mm] = aux[(nn)*(nxmax-nxmin) + (mm)];
-        }
-      }
+    // iterate over lats and lons
+    for (nn = nymin+1; nn < nymax-1; nn++){
+      for (mm = nxmin+1; mm < nxmax-1; mm++){
+        // read adjacent and central time series from netcdf file
+        start[1] = (size_t) nn - nymin;
+        start[2] = (size_t) mm - nxmin - 1;
+        if ((retval = nc_get_vara_double(ncID, varID[0], start, count, &uw[0]))) ERR(retval);
+        start[1] = (size_t) nn - nymin;
+        start[2] = (size_t) mm  - nxmin + 1;
+        if ((retval = nc_get_vara_double(ncID, varID[0], start, count, &ue[0]))) ERR(retval);
+        start[1] = (size_t) nn - nymin + 1;
+        start[2] = (size_t) mm - nxmin;
+        if ((retval = nc_get_vara_double(ncID, varID[1], start, count, &vn[0]))) ERR(retval);
+        start[1] = (size_t) nn - nymin - 1;
+        start[2] = (size_t) mm - nxmin;
+        if ((retval = nc_get_vara_double(ncID, varID[1], start, count, &vs[0]))) ERR(retval);
+        start[1] = (size_t) nn - nymin;
+        start[2] = (size_t) mm - nxmin;
+        if ((retval = nc_get_vara_double(ncID, varID[0], start, count, &uc[0]))) ERR(retval);
+        if ((retval = nc_get_vara_double(ncID, varID[1], start, count, &vc[0]))) ERR(retval);
+        if ((retval = nc_get_vara_double(ncID, varID[2], start, count, &mld[0]))) ERR(retval);
 
-      // go over all points and calculate divergence
-      for (nn=nymin+1; nn<nymax-1; nn++){
-        for (mm=nxmin+1; mm<nxmax-1; mm++){
-          // corresponding index: (nn-nymin)*(nxmax-nxmin) + (mm-nxmin)
-          // set condition for points on boundaries -> require all neighbors to exist
-          if (((lsmask->data[nn-1][mm])==0)&((lsmask->data[nn+1][mm])==0)&
-              ((lsmask->data[nn][mm-1])==0)&((lsmask->data[nn][mm+1])==0)){
-            // all clear
-            ww[nn-nymin][mm-nxmin] = (0.5 * (uu[nn+1-nymin][mm-nxmin] - uu[nn-nymin][mm-nxmin])/dys[nn-nymin] +
-                    0.5 * (uu[nn-nymin][mm-nxmin] - uu[nn-1-nymin][mm-nxmin])/dys[nn-nymin-1] +
-                    0.5 * (vv[nn-nymin][mm+1-nxmin] - vv[nn-nymin][mm-nxmin])/dx[nn-nymin] +
-                    0.5 * (vv[nn-nymin][mm-nxmin] - vv[nn-nymin][mm-1-nxmin])/dx[nn-nymin]) * mld[nn-nymin][mm-nxmin];
-          } else {
-            ww[nn-nymin][mm-nxmin] = NC_FILL_DOUBLE;
-          }
+        // calculate vertical velocity
+        for (nhour=0; nhour < count[0]; nhour++){
+          ww[nhour] = 0.5 * ((vn[nhour] - vc[nhour])/dys[nn+1] +
+                             (vc[nhour] - vs[nhour])/dys[nn] +
+                             (ue[nhour] - uc[nhour])/dx[nn] +
+                             (uc[nhour] - uw[nhour])/dx[nn]) * mld[nhour];
         }
+
+        // dump point to netCDF file
+        if ((retval = nc_put_vara_double(ncID, varID[3], start, count, &ww[0]))) ERR(retval);
       }
-      for (nn=0; nn<(nymax-nymin); nn++){
-        ww[nn][0] = ww[nn][nxmax-nxmin-1] = NC_FILL_DOUBLE;
-      }
-      for (mm=0; mm<(nxmax-nxmin); mm++){
-        ww[0][mm] = ww[nymax-nymin-1][mm] = NC_FILL_DOUBLE;
-      }
-//      if ((nmonth==0)&(nhour==0)) {
-//        for (nn=0; nn<3; nn++){
-//          printf("%e\t%e\t%e\n", ww[nn][0], ww[nn][1], ww[nn][2]);
-//          fflush(NULL);
-//        }
-//      }
-      // dump w to file
-      for(nn=0; nn<(nymax-nymin); nn++) {
-        for (mm = 0; mm < (nxmax - nxmin); mm++) {
-          aux[(nn) * (nxmax - nxmin) + (mm)] = ww[nn][mm];
-        }
-      }
-      if ((retval = nc_put_vara_double(ncID, varID[3], start, count, &aux[0]))) ERR(retval);
     }
-    // close netcdf file
+    // close file
     if ((retval = nc_close(ncID))) ERR(retval);
-  }
 
-  // free temporary arrays
-  dfree2(uu, (size_t) (nymax - nymin));
-  dfree2(vv, (size_t) (nymax - nymin));
-  dfree2(ww, (size_t) (nymax - nymin));
-  dfree2(mld, (size_t) (nymax - nymin));
-  free(aux);
+    // free arrays for next loop
+    free(vn);
+    free(vs);
+    free(vc);
+    free(ue);
+    free(uw);
+    free(uc);
+    free(ww);
+    free(mld);
+  }
 }
