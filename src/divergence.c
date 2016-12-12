@@ -69,6 +69,7 @@ void divergence(dat2d *lsmask, int nxmin, int nxmax, int nymin, int nymax, int l
     if ((retval = nc_inq_varid(ncID, XVEL, &varID[0]))) ERR(retval);
     if ((retval = nc_inq_varid(ncID, YVEL, &varID[1]))) ERR(retval);
     if ((retval = nc_inq_varid(ncID, MLD, &varID[2]))) ERR(retval);
+    if ((retval = nc_inq_varid(ncID, ZVEL, &varID[3]))) ERR(retval);
 
     // get dimension IDs
     if ((retval = nc_inq_dimid(ncID, TIME, &dimID[0]))) ERR(retval);
@@ -83,12 +84,6 @@ void divergence(dat2d *lsmask, int nxmin, int nxmax, int nymin, int nymax, int l
         DIMERR(2);
       }
     }
-
-    // define vertical velocity in data file
-    if ((retval = nc_def_var(ncID, ZVEL, NC_DOUBLE, 3, dimID, &varID[3]))) ERR(retval);
-    if ((retval = nc_def_var_chunking(ncID, varID[3], NC_CHUNKED, chunksize))) ERR(retval);
-    if ((retval = nc_put_att_text(ncID, varID[3], UNITS, strlen(MPS), MPS))) ERR(retval);
-    if ((retval = nc_put_att_text(ncID, varID[3], LONGNAME, strlen(ZVEL_LONG), ZVEL_LONG))) ERR(retval);
 
     // iterate over lats and lons
     for (nn = nymin+1; nn < nymax-1; nn++){
@@ -114,10 +109,10 @@ void divergence(dat2d *lsmask, int nxmin, int nxmax, int nymin, int nymax, int l
 
         // calculate vertical velocity
         for (nhour=0; nhour < count[0]; nhour++){
-          ww[nhour] = 0.5 * ((vn[nhour] - vc[nhour])/dys[nn+1] +
-                             (vc[nhour] - vs[nhour])/dys[nn] +
-                             (ue[nhour] - uc[nhour])/dx[nn] +
-                             (uc[nhour] - uw[nhour])/dx[nn]) * mld[nhour];
+          ww[nhour] = 0.5 * ((vn[nhour] - vc[nhour])/dys[nn - nymin] +
+                             (vc[nhour] - vs[nhour])/dys[nn - nymin - 1] +
+                             (ue[nhour] - uc[nhour])/dx[nn - nymin - 1] +
+                             (uc[nhour] - uw[nhour])/dx[nn - nymin - 1]) * mld[nhour];
         }
 
         // dump point to netCDF file
