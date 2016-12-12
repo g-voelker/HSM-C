@@ -3,4 +3,5 @@
 //
 
 extern void initnc(dat2d *lsmask, int* time, int xmin, int xmax, int ymin, int ymax, int leap);
-extern void savePoint(double* uu, double* vv, double* mld, int* time, int nxmin, int nx, int nymin, int ny, int leap);
+extern void savePoint(double* uu, double* vv, double* mld,  double* taux, double* tauy,
+                      int* time, int nxmin, int nx, int nymin, int ny, int leap);

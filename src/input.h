@@ -6,9 +6,9 @@
 
 // bounding box
 #define LATMIN 20
-#define LATMAX 22
+#define LATMAX 40
 #define LONMIN 320
-#define LONMAX 322
+#define LONMAX 340
 
 // flags
 #define DBGFLG 1

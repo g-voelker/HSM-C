@@ -143,7 +143,7 @@ void getdata(int nlat, int nlon, int leap,
     // open netcdf file
     if ((retval = nc_open(filepath, NC_NOWRITE, &ncID))) ERR(retval);
     // get time dimension
-    if ((retval = nc_inq_varid(ncID, "time", &timeID))) ERR(retval);
+    if ((retval = nc_inq_varid(ncID, TIME, &timeID))) ERR(retval);
     if ((retval = nc_inq_vardimid (ncID, timeID, &timeDimID))) ERR(retval);
     if ((retval = nc_inq_dim(ncID, timeDimID, timeDimName, &nt))) ERR(retval);
 

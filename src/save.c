@@ -25,7 +25,7 @@ int sum(size_t *array, int num){
 }
 
 void initnc(dat2d *lsmask, int* time, int nxmin, int nxmax, int nymin, int nymax, int leap){
-  int *timeSliceS, *timeSliceH, varID[3], nn = 0, mm = 0;
+  int *timeSliceS, *timeSliceH, varID[6], nn = 0, mm = 0;
   size_t nt = (365 + (size_t) leap) * 24;
   size_t chunksize[3] = {28*24, CHUNK_LAT, CHUNK_LON};
   int ncID = 0, retval, dimID[3], dimVarID[3];
@@ -88,18 +88,31 @@ void initnc(dat2d *lsmask, int* time, int nxmin, int nxmax, int nymin, int nymax
     if ((retval = nc_def_var_chunking(ncID, varID[0], NC_CHUNKED, chunksize))) ERR(retval);
     if ((retval = nc_put_att_text(ncID, varID[0], UNITS, strlen(MPS), MPS))) ERR(retval);
     if ((retval = nc_put_att_text(ncID, varID[0], LONGNAME, strlen(XVEL_LONG), XVEL_LONG))) ERR(retval);
-
     // v component
     if ((retval = nc_def_var(ncID, YVEL, NC_DOUBLE, 3, dimID, &varID[1]))) ERR(retval);
     if ((retval = nc_def_var_chunking(ncID, varID[1], NC_CHUNKED, chunksize))) ERR(retval);
     if ((retval = nc_put_att_text(ncID, varID[1], UNITS, strlen(MPS), MPS))) ERR(retval);
     if ((retval = nc_put_att_text(ncID, varID[1], LONGNAME, strlen(YVEL_LONG), YVEL_LONG))) ERR(retval);
-
-    // mixed layer depth
-    if ((retval = nc_def_var(ncID, MLD, NC_DOUBLE, 3, dimID, &varID[2]))) ERR(retval);
+    // define vertical velocity in data file
+    if ((retval = nc_def_var(ncID, ZVEL, NC_DOUBLE, 3, dimID, &varID[2]))) ERR(retval);
     if ((retval = nc_def_var_chunking(ncID, varID[2], NC_CHUNKED, chunksize))) ERR(retval);
-    if ((retval = nc_put_att_text(ncID, varID[2], UNITS, strlen(METER), METER))) ERR(retval);
-    if ((retval = nc_put_att_text(ncID, varID[2], LONGNAME, strlen(MLD_LONG), MLD_LONG))) ERR(retval);
+    if ((retval = nc_put_att_text(ncID, varID[2], UNITS, strlen(MPS), MPS))) ERR(retval);
+    if ((retval = nc_put_att_text(ncID, varID[2], LONGNAME, strlen(ZVEL_LONG), ZVEL_LONG))) ERR(retval);
+    // mixed layer depth
+    if ((retval = nc_def_var(ncID, MLD, NC_DOUBLE, 3, dimID, &varID[3]))) ERR(retval);
+    if ((retval = nc_def_var_chunking(ncID, varID[3], NC_CHUNKED, chunksize))) ERR(retval);
+    if ((retval = nc_put_att_text(ncID, varID[3], UNITS, strlen(METER), METER))) ERR(retval);
+    if ((retval = nc_put_att_text(ncID, varID[3], LONGNAME, strlen(MLD_LONG), MLD_LONG))) ERR(retval);
+    // wind work
+    if ((retval = nc_def_var(ncID, EIN, NC_DOUBLE, 3, dimID, &varID[4]))) ERR(retval);
+    if ((retval = nc_def_var_chunking(ncID, varID[4], NC_CHUNKED, chunksize))) ERR(retval);
+    if ((retval = nc_put_att_text(ncID, varID[4], UNITS, strlen(WPM2), WPM2))) ERR(retval);
+    if ((retval = nc_put_att_text(ncID, varID[4], LONGNAME, strlen(EIN_LONG), EIN_LONG))) ERR(retval);
+    // energy flux radiated
+    if ((retval = nc_def_var(ncID, EOUT, NC_DOUBLE, 3, dimID, &varID[5]))) ERR(retval);
+    if ((retval = nc_def_var_chunking(ncID, varID[5], NC_CHUNKED, chunksize))) ERR(retval);
+    if ((retval = nc_put_att_text(ncID, varID[5], UNITS, strlen(WPM2), WPM2))) ERR(retval);
+    if ((retval = nc_put_att_text(ncID, varID[5], LONGNAME, strlen(EOUT_LONG), EOUT_LONG))) ERR(retval);
 
     // close netcdf file
     if ((retval = nc_close(ncID))) ERR(retval);
@@ -110,13 +123,14 @@ void initnc(dat2d *lsmask, int* time, int nxmin, int nxmax, int nymin, int nymax
   free(lonSlice);
 }
 
-void savePoint(double* uu, double* vv, double* mld, int* time, int nxmin, int nx, int nymin, int ny, int leap){
-  int nn = 0, nt = 0, mon = 0, ncID, retval, varID;
+void savePoint(double* uu, double* vv, double* mld, double* taux, double* tauy,
+               int* time, int nxmin, int nx, int nymin, int ny, int leap){
+  int nn = 0, nt = 0, mon = 0, ncID, retval, varID, mm = 0;
   int *index;
   size_t start[3], count[3];
   time_t aux;
   struct tm *auxTime;
-  double *uSlice, *vSlice, *mldSlice;
+  double *uSlice, *vSlice, *mldSlice, *windWork;
   char filepath[MAXCHARLEN];
 //  char test[MAXCHARLEN];
 
@@ -145,10 +159,15 @@ void savePoint(double* uu, double* vv, double* mld, int* time, int nxmin, int nx
     uSlice = dalloc(uSlice, (size_t) (index[nn + 1] - index[nn]));
     vSlice = dalloc(vSlice, (size_t) (index[nn + 1] - index[nn]));
     mldSlice = dalloc(mldSlice, (size_t) (index[nn + 1] - index[nn]));
+    windWork = dalloc(windWork, (size_t) (index[nn + 1] - index[nn]));
 
     uSlice = dslice1(uu, uSlice, index[nn], index[nn + 1]);
     vSlice = dslice1(vv, vSlice, index[nn], index[nn + 1]);
     mldSlice = dslice1(mld, mldSlice, index[nn], index[nn + 1]);
+
+    for (mm=index[nn]; mm < index[nn + 1]; mm++){
+      windWork[mm - index[nn]] = taux[mm] * uSlice[mm - index[nn]] + tauy[mm] * vSlice[mm - index[nn]];
+    }
 
     // set filepath as above
     sprintf(filepath, OUTPATH, nn+1);
@@ -176,12 +195,17 @@ void savePoint(double* uu, double* vv, double* mld, int* time, int nxmin, int nx
     if ((retval = nc_inq_varid(ncID, MLD, &varID))) ERR(retval);
     if ((retval = nc_put_vara_double(ncID, varID, start, count, &mldSlice[0]))) ERR(retval);
 
+    // get variable ID and write hyperslab into file
+    if ((retval = nc_inq_varid(ncID, EIN, &varID))) ERR(retval);
+    if ((retval = nc_put_vara_double(ncID, varID, start, count, &windWork[0]))) ERR(retval);
+
     // close nc file
     if ((retval = nc_close(ncID))) ERR(retval);
 
     free(uSlice);
     free(vSlice);
     free(mldSlice);
+    free(windWork);
   }
   free(index);
 }

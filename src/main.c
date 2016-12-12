@@ -36,7 +36,7 @@ void slab(int year, int nlat, int nlon) {
 }*/
 
 int main(void) {
-  if (DBGFLG > 1) {
+  if (DBGFLG > 2) {
     printf("main: initialize variables\n");
     fflush(NULL);
   }
@@ -198,7 +198,7 @@ int main(void) {
         vv[ll] = aux[ll][1];
       }
       // write out mld, time, u and v
-      savePoint(uu, vv, mld, time, NLONMIN, mm, nlatmin, nn, leap);
+      savePoint(uu, vv, mld, taux, tauy, time, NLONMIN, mm, nlatmin, nn, leap);
     }
   }
 
