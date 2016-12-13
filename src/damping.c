@@ -4,17 +4,35 @@
 #include <math.h>
 #include <stdio.h>
 #include "../lib/constants.h"
+#include "../lib/structs.h"
 #include "input.h"
 
-double damping(double lat) {
+double damping(dat2d_2 *damp, int nlat, double lon) {
   if (DBGFLG>2) { printf("  damping: setting local damping time scale\n"); fflush(NULL);}
-  /* this is set to 1/5 days for North Atlantic
-   * for world wide distribution see Park 2009 */
-  double r0;
-  /* set r0 in 1/s */
-  r0  = 1.0/5.0/86400.0;
-  return r0;
+  double r0, aux;
 
+  // use negative representation for NA
+  if (lon>=180){
+    aux = lon-360;
+  } else {
+    aux = lon;
+  }
+  // check if in NA and set r0 accordingly
+  if (damp->xx[nlat]<=30.0){
+    if ((aux>fmax((-27 / 15 * damp->xx[nlat] - 64.0), -100.0))&(aux<=25.0)){
+      r0 = damp->y2[nlat];
+    } else {
+      r0 = damp->y1[nlat];
+    }
+  } else {
+    if ((aux>-100.0)&(aux<=25.0)){
+      r0 = damp->y2[nlat];
+    } else{
+      r0 = damp->y1[nlat];
+    }
+  }
+
+  return r0;
 }
 
 double coriolis(double lat) {

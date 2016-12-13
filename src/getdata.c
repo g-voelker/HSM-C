@@ -4,6 +4,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include "../lib/dalloc.h"
+#include "../lib/structs.h"
 #include "input.h"
 #include "header.h"
 // #include <grib_api.h>
@@ -234,3 +235,81 @@ void getdata(int nlat, int nlon, int leap,
 
   if (DBGFLG>2) { printf("  getdata: return to main\n"); fflush(NULL);}
 }
+
+dat2d_2 initdamping(dat2d *lsmask){
+  int nn, mm;
+  int ncID, varID[3], dimID, retval;
+  size_t dampNLat;
+  dat2d_2 data;
+  char filepath[] = DAMPPATH, dimName[NC_MAX_NAME];
+  double *dampLat, *dampWorld, *dampNA, *rr, *rrNA;
+
+  if (DBGFLG>2) { printf("  initdamping: reading damping time scales\n"); fflush(NULL);}
+
+  // open netcdf file
+  if ((retval = nc_open(filepath, NC_NOWRITE, &ncID))) ERR(retval);
+
+  // find variable IDs
+  if ((retval = nc_inq_varid(ncID, LATS, &varID[0]))) ERR(retval);
+  if ((retval = nc_inq_varid(ncID, DAMP, &varID[1]))) ERR(retval);
+  if ((retval = nc_inq_varid(ncID, DAMPNA, &varID[2]))) ERR(retval);
+
+  // find dimension bounds
+  if ((retval = nc_inq_vardimid(ncID, varID[0], &dimID))) ERR(retval);
+  if ((retval = nc_inq_dim(ncID, dimID, dimName, &dampNLat))) ERR(retval);
+
+  // allocate meomory for temporary arrays
+  dampLat = dalloc(dampLat, dampNLat);
+  dampWorld = dalloc(dampWorld, dampNLat);
+  dampNA = dalloc(dampNA, dampNLat);
+
+  rr = dalloc(rr, (size_t) lsmask->nlat);
+  rrNA = dalloc(rrNA, (size_t) lsmask->nlat);
+
+  // read data
+  if ((retval = nc_get_var_double(ncID, varID[0], &dampLat[0]))) ERR(retval);
+  if ((retval = nc_get_var_double(ncID, varID[1], &dampWorld[0]))) ERR(retval);
+  if ((retval = nc_get_var_double(ncID, varID[2], &dampNA[0]))) ERR(retval);
+
+  // close nc file
+  if ((retval = nc_close(ncID))) ERR(retval);
+
+  // interpolate to model grid
+  for (nn=0; nn<lsmask->nlat; nn++) {
+    // check position relative to given data latitude
+    for (mm = 1; mm <= dampNLat; mm++) {
+      if (dampLat[mm] > lsmask->lat[nn]) {
+        break;
+      }
+    }
+    // interpolate
+    if (lsmask->lat[nn] < dampLat[mm]){ // check if latitude is south of values from Park et. al. (2009)
+      rr[nn] = dampWorld[0];
+      rrNA[nn] = dampNA[0];
+    }
+    else { // if north, interpolate
+      rr[nn] = (dampWorld[mm - 1] +
+              (dampWorld[mm] - dampWorld[mm - 1]) /
+              (dampLat[mm] - dampLat[mm - 1]) *
+              (lsmask->lat[nn] - dampLat[mm - 1]));
+      rrNA[nn] = (dampNA[mm - 1] +
+              (dampNA[mm] - dampNA[mm - 1]) /
+              (dampLat[mm] - dampLat[mm - 1]) *
+              (lsmask->lat[nn] - dampLat[mm - 1]));
+
+    }
+  }
+
+  // free temporary arrays
+  free(dampLat);
+  free(dampWorld);
+  free(dampNA);
+
+  // assign data to struct
+  data.nx = lsmask->nlat;
+  data.xx = lsmask->lat;
+  data.y1 = rr;
+  data.y2 = rrNA;
+
+  return(data);
+};

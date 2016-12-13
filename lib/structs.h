@@ -17,6 +17,15 @@ struct dat3D {
   double ***data;
 };
 
+struct dat1D_2 {
+  int nx;
+  double *xx;
+  double *y1;
+  double *y2;
+};
+
 typedef struct dat1D dat1d;
 typedef struct dat2D dat2d;
 typedef struct dat3D dat3d;
+
+typedef struct dat1D_2 dat2d_2;

@@ -47,7 +47,7 @@ int main(void) {
   double rho0 = RHO, r0, f0;
 
   // land sea mask related variables
-  char lsmfile[] = "../static/lsm-hres.nc";
+  char lsmfile[] = LSMPATH;
 
   // subsetting related variables
   int NLATMIN, NLATMAX, nlatmin, nlatmax, NLONMIN, NLONMAX;
@@ -168,6 +168,7 @@ int main(void) {
 
   // be aware that the lat array may be sorted inversely
   initnc(&lsmask, time, NLONMIN, NLONMAX + 1, nlatmin, nlatmax + 1, leap);
+  dat2d_2 damp = initdamping(&lsmask);
 
   if (DBGFLG>1) {
     printf("main: subset boundaries are set by:\n");
@@ -187,7 +188,7 @@ int main(void) {
       // load stress and mixed layer depth data
       getdata(nn, mm, leap, time, mld, taux, tauy);
       // set damping parameter
-      r0 = damping(lsmask.lat[nn]);
+      r0 = damping(&damp, nn, lsmask.lon[mm]);
       // set Coriolis frequency
       f0 = coriolis(lsmask.lat[nn]);
       // calculate u and v

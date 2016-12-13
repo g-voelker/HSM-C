@@ -7,6 +7,10 @@
 #define RAD2DEG(rad) {(rad)*180.0/PI);}
 #define MAXCHARLEN 100
 
+// define static paths
+#define DAMPPATH "../static/park_et_al.nc"
+#define LSMPATH "../static/lsm-hres.nc"
+
 // the length of the DFTs is set to 2^5 * 7^3 in accordance with the maximum cutoff for long damping times.
 // this value is set to preserve performance while making sure the cutoff is long enough
 // edit only if you know what you do; values are related to ringing effects
@@ -26,6 +30,8 @@
 #define TIME "time"
 #define LATS "latitude"
 #define LONS "longitude"
+#define DAMP "r_avg"
+#define DAMPNA "r_NA"
 #define XVEL "u"
 #define XVEL_LONG "x-component of velocity in mixed layer"
 #define YVEL "v"
