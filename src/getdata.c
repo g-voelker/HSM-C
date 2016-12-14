@@ -314,4 +314,4 @@ dat2d_2 initdamping(dat2d *lsmask){
   data.y2 = rrNA;
 
   return(data);
-};
+}

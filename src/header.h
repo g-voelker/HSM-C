@@ -1,10 +1,17 @@
 #include "../lib/constants.h"
 
+// netcdf error macros
 #define ERRCODE 2
 #define ERR(e) {printf("Error: %s\n", nc_strerror(e)); exit(ERRCODE);}
+
+// dimension error macro
 #define DIMERR(e) {printf("Error: too few points in given domain. Hybrid model aborted.\n"); exit(e);}
+
+// convert between degrees to radians
 #define DEG2RAD(deg) ((deg)*PI/180.0)
 #define RAD2DEG(rad) {(rad)*180.0/PI);}
+
+// maximum length of strings
 #define MAXCHARLEN 100
 
 // define static paths
@@ -22,6 +29,12 @@
 // edit only if you know what you do; too high values may lead to crashes
 #define CHUNK_LAT 1
 #define CHUNK_LON 1
+
+// spatial autocorrelation parameters
+// these parameters are used for the analysis of the vertical velocity field
+// CORRMIN / CORRMAX are the smallest / largest possible wavelengths
+#define CORRMIN 200e3
+#define CORRMAX 1200e3
 
 // macros for variable / attribute name space
 #define UNITS "units"

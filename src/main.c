@@ -16,6 +16,7 @@
 #include "lsm.h"
 #include "input.h"
 #include "divergence.h"
+#include "wavelength.h"
 
 /*
 void slab(int year, int nlat, int nlon) {
@@ -175,6 +176,7 @@ int main(void) {
     printf("     (latmin, latmax, lonmin, lonmax):\n");
     printf("       %.2f; %.2f; %.2f; %.2f;\n",
            lsmask.lat[NLATMIN], lsmask.lat[NLATMAX], lsmask.lon[NLONMIN], lsmask.lon[NLONMAX]);
+    printf("main: running slab model\n");
     printf("main: begin loop over points\n");
     fflush(NULL);
   }
@@ -184,33 +186,60 @@ int main(void) {
   // calculate slab model on all points
   for (nn=nlatmin; nn<=nlatmax; nn++){
     for (mm=NLONMIN; mm<=NLONMAX; mm++){
-      if (DBGFLG>1) { printf("    (%d, %d)\n", nn, mm); fflush(NULL);}
-      // load stress and mixed layer depth data
-      getdata(nn, mm, leap, time, mld, taux, tauy);
-      // set damping parameter
-      r0 = damping(&damp, nn, lsmask.lon[mm]);
-      // set Coriolis frequency
-      f0 = coriolis(lsmask.lat[nn]);
-      // calculate u and v
-      solve(fft, ifft, r0, f0, rho0, leap, taux, tauy, mld, freqs, aux, AUX);
-      // set velocities
-      for (ll=0; ll < ((365 + leap) * 24); ll++){
-        uu[ll] = aux[ll][0];
-        vv[ll] = aux[ll][1];
+      // check if point is on land; else leave fill value in file
+      if (lsmask.data[nn][mm]==0.0) {
+        if (DBGFLG > 1) {
+          printf("    (%d, %d)\n", nn, mm);
+          fflush(NULL);
+        }
+        // load stress and mixed layer depth data
+        getdata(nn, mm, leap, time, mld, taux, tauy);
+        // set damping parameter
+        r0 = damping(&damp, nn, lsmask.lon[mm]);
+        // set Coriolis frequency
+        f0 = coriolis(lsmask.lat[nn]);
+        // calculate u and v
+        solve(fft, ifft, r0, f0, rho0, leap, taux, tauy, mld, freqs, aux, AUX);
+        // set velocities
+        for (ll = 0; ll < ((365 + leap) * 24); ll++) {
+          uu[ll] = aux[ll][0];
+          vv[ll] = aux[ll][1];
+        }
+        // write out mld, time, u and v
+        savePoint(uu, vv, mld, taux, tauy, time, NLONMIN, mm, nlatmin, nn, leap);
       }
-      // write out mld, time, u and v
-      savePoint(uu, vv, mld, taux, tauy, time, NLONMIN, mm, nlatmin, nn, leap);
     }
   }
 
   if (DBGFLG>1) {printf("main: proceed with hybrid extension\n"); fflush(NULL);}
 
+  if (DBGFLG>2) {printf("main: get divergence of velocity field\n");fflush(NULL);}
   // get mid-point divergences
-
   divergence(&lsmask, NLONMIN, NLONMAX + 1, nlatmin, nlatmax + 1, leap);
 
-  // get energy fluxes
+  if (DBGFLG>2) {printf("main: get divergence of velocity field\n");fflush(NULL);}
+  wavelength(&lsmask, NLONMIN, NLONMAX + 1, nlatmin, nlatmax + 1, leap);
 
+  // set struct for lh time series
+  dat1d lh;
+  lh.ntime = (365+leap)*24;
+  lh.time = dalloc(lh.time, (size_t) lh.ntime);
+  for (nn=0; nn < lh.ntime; nn++) lh.time[nn] = (double) time[nn];
+
+  if (DBGFLG>1) {printf("main: begin loop over points\n");fflush(NULL);}
+  // calculate hybrid model on all points
+  for (nn=nlatmin; nn<=nlatmax; nn++){
+    for (mm=NLONMIN; mm<=NLONMAX; mm++){
+      if (DBGFLG>1) { printf("    (%d, %d)\n", nn, mm); fflush(NULL);}
+      // calculate horizontal wave lengths
+      getlh(&lsmask, &lh, nn, mm);
+
+      // get energy flux for point
+
+      // save data to nc file
+
+    }
+  }
 
   if (DBGFLG>2) {printf("main: clean up memory\n");fflush(NULL);}
 
@@ -223,6 +252,7 @@ int main(void) {
   dfree2(lsmask.data, (size_t) lsmask.nlon);
   free(damp.y1); // note tha damp.xx is free'd at lsmask.lat
   free(damp.y2);
+  free(lh.time);
 
   return -1;
 }
