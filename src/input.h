@@ -6,12 +6,12 @@
 
 // bounding box
 #define LATMIN 20
-#define LATMAX 40
+#define LATMAX 22
 #define LONMIN 320
-#define LONMAX 340
+#define LONMAX 322
 
 // flags
-#define DBGFLG 1
+#define DBGFLG 0
 #define STRSCOR 1
 
 // paths to dynamic data;
@@ -19,4 +19,4 @@
 // months are replaced with %02d
 #define MLDPATH "/run/media/georg/TRANSCEND/EIS2/MIMOC/MIMOC_ML_v2.2_CT_SA_MLP_month%02d_regrid.nc"
 #define STRSPATH "/run/media/georg/TRANSCEND/EIS2/NCEP-CFSR/stress/p2/wndstrs.gdas.%d%02d.fast.nc"
-#define OUTPATH "/run/media/georg/TRANSCEND/EIS2/results/eis3_test/test%02d.nc"
+#define OUTPATH "/run/media/georg/TRANSCEND/EIS2/results/eis3_test/test_lh_%02d.nc"

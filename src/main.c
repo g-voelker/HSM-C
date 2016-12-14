@@ -221,6 +221,8 @@ int main(void) {
   free(lsmask.lat);
   free(lsmask.lon);
   dfree2(lsmask.data, (size_t) lsmask.nlon);
+  free(damp.y1); // note tha damp.xx is free'd at lsmask.lat
+  free(damp.y2);
 
   return -1;
 }

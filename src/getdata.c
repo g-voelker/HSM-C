@@ -277,17 +277,19 @@ dat2d_2 initdamping(dat2d *lsmask){
   // interpolate to model grid
   for (nn=0; nn<lsmask->nlat; nn++) {
     // check position relative to given data latitude
-    for (mm = 1; mm <= dampNLat; mm++) {
+    for (mm = 1; mm < dampNLat; mm++) {
       if (dampLat[mm] > lsmask->lat[nn]) {
         break;
       }
     }
-    // interpolate
-    if (lsmask->lat[nn] < dampLat[mm]){ // check if latitude is south of values from Park et. al. (2009)
+    // inter- / extrapolate
+    if (lsmask->lat[nn] < dampLat[0]){ // extrapolate constant in south
       rr[nn] = dampWorld[0];
       rrNA[nn] = dampNA[0];
-    }
-    else { // if north, interpolate
+    } else if (lsmask->lat[nn] > dampLat[dampNLat-1]) { // extrapolate constant in north
+      rr[nn] = dampWorld[dampNLat-1];
+      rrNA[nn] = dampNA[dampNLat-1];
+    } else { // if north, interpolate
       rr[nn] = (dampWorld[mm - 1] +
               (dampWorld[mm] - dampWorld[mm - 1]) /
               (dampLat[mm] - dampLat[mm - 1]) *
