@@ -9,3 +9,5 @@ extern void getdata(int nlat, int nlon, int leap,
                     double *taux, double *tauy );
 
 extern dat2d_2 initdamping(dat2d *lsmask);
+
+extern void getlh(dat2d *lsmask, dat1d *lh, int nn, int mm);

@@ -4,8 +4,9 @@
 #define ERRCODE 2
 #define ERR(e) {printf("Error: %s\n", nc_strerror(e)); exit(ERRCODE);}
 
-// dimension error macro
+// error macros
 #define DIMERR(e) {printf("Error: too few points in given domain. Hybrid model aborted.\n"); exit(e);}
+#define VALERR(e) {printf("Error: size of domain too small for autocorrelation calculation. Hybrid model aborted.\n"); exit(e);}
 
 // convert between degrees to radians
 #define DEG2RAD(deg) ((deg)*PI/180.0)

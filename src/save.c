@@ -209,3 +209,7 @@ void savePoint(double* uu, double* vv, double* mld, double* taux, double* tauy,
   }
   free(index);
 }
+
+void savelh(double ***lh, int nmonth, int leap){
+  // save data to file
+}

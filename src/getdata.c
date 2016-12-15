@@ -315,3 +315,18 @@ dat2d_2 initdamping(dat2d *lsmask){
 
   return(data);
 }
+
+void getlh(dat2d *lsmask, dat1d *lh, int nn, int mm){
+  // get indicees of points to load
+
+  // load matrix
+
+  // analyse time step by time step
+
+  // average time bins together
+
+  // interpolate reduced time series
+
+  // set values in struct
+
+}
