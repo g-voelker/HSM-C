@@ -1,4 +1,3 @@
-#include <grib_api.h>
 #include <netcdf.h>
 #include <time.h>
 #include <stdlib.h>

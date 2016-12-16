@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 3.6)
 project(EIS)
 
 #set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
-set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -lnetcdf -lgrib_api -lc -lfftw3 -lm")
+set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -lnetcdf -lc -lfftw3 -lm")
 # include_directories ("/usr/include")
 
 set(SOURCE_FILES
