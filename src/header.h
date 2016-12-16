@@ -36,6 +36,7 @@
 // CORRMIN / CORRMAX are the smallest / largest possible wavelengths
 #define CORRMIN 200e3
 #define CORRMAX 1200e3
+#define CORRLEN 21
 
 // macros for variable / attribute name space
 #define UNITS "units"

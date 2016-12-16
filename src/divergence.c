@@ -13,7 +13,7 @@
 #include "header.h"
 #include "input.h"
 
-double distance(double lon1, double lon2, double lat1, double lat2){
+double dist(double lon1, double lon2, double lat1, double lat2){
   double dd;
   dd = EARTHRADIUS * 2 * acos(sin(DEG2RAD(lat1)) * sin(DEG2RAD(lat2)) +
                               cos(DEG2RAD(lat1)) * cos(DEG2RAD(lat2)) * cos(DEG2RAD(lon2 - lon1)));
@@ -40,10 +40,10 @@ void divergence(dat2d *lsmask, int nxmin, int nxmax, int nymin, int nymax, int l
 
   // calculate distance grid
   for (nn=nymin; nn<(nymax-1); nn++){ // on staggered grid
-    dys[nn-nymin] = dsgn(lsmask->lat[nn+1] - lsmask->lat[nn]) * distance(0.0, 0.0, lsmask->lat[nn], lsmask->lat[nn+1]);
+    dys[nn-nymin] = dsgn(lsmask->lat[nn+1] - lsmask->lat[nn]) * dist(0.0, 0.0, lsmask->lat[nn], lsmask->lat[nn+1]);
   }
   for (nn=nymin; nn<nymax; nn++){
-    dx[nn-nymin] = dsgn(lsmask->lon[1] - lsmask->lon[0]) * distance(lsmask->lon[0], lsmask->lon[1], lsmask->lat[nn], lsmask->lat[nn]);
+    dx[nn-nymin] = dsgn(lsmask->lon[1] - lsmask->lon[0]) * dist(lsmask->lon[0], lsmask->lon[1], lsmask->lat[nn], lsmask->lat[nn]);
   }
 
   // loop over snap shots
