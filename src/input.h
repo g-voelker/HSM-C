@@ -6,7 +6,7 @@
 
 // bounding box
 #define LATMIN 20
-#define LATMAX 21
+#define LATMAX 22
 #define LONMIN 320
 #define LONMAX 321
 

@@ -94,7 +94,7 @@ int main(void) {
   tcon.tm_hour = 1;
   tcon.tm_min = 0;
   tcon.tm_sec = 0;
-  tcon.tm_gmtoff = 0;
+  // tcon.tm_gmtoff = 0;
   tcon.tm_isdst = 0;
 
   time_t referenceTime;

@@ -125,7 +125,7 @@ void autocorr(dat2d *lsmask, dat3d *ww, double ***distances, double **lh,
       iterbounds[0] = (int) fmax(nn - ndlat/2, nlatmin);
       iterbounds[1] = (int) fmin(nn + ndlat/2, nlatmin + ww->nlat);
       // iterate over all time steps
-      for(nt=0; nt<days[nmonth], nt++) {
+      for(nt=0; nt<days[nmonth]; nt++) {
         // get average vertical velocity
         avg = davg2(ww->data[nt], ww->nlat, ww->nlon);
         // set correlation array and norms to zero

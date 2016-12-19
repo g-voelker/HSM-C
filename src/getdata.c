@@ -2,6 +2,7 @@
 #include <time.h>
 #include <stdlib.h>
 #include <stdio.h>
+#include <string.h>
 #include "../lib/dalloc.h"
 #include "../lib/structs.h"
 #include "input.h"
@@ -73,7 +74,7 @@ void getdata(int nlat, int nlon, int leap,
   tcon.tm_hour = 0;
   tcon.tm_min = 0;
   tcon.tm_sec = 0;
-  tcon.tm_gmtoff = 0;
+  // tcon.tm_gmtoff = 0;
   tcon.tm_isdst = 0;
 
   // take into account the reverse ordering in the mixed layer data
