@@ -6,12 +6,12 @@
 
 // bounding box
 #define LATMIN 20
-#define LATMAX 22
+#define LATMAX 30
 #define LONMIN 320
-#define LONMAX 321
+#define LONMAX 350
 
 // flags
-#define DBGFLG 0
+#define DBGFLG 1
 #define STRSCOR 1
 
 // paths to dynamic data;

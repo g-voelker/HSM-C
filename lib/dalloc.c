@@ -32,7 +32,7 @@ double*** dalloc3(double*** array, size_t xmax, size_t ymax, size_t zmax){
   array = (double ***) malloc(sizeof(double) * xmax);
   for (nn=0; nn<xmax; nn++){
     array[nn] = (double **) malloc(sizeof(double) * ymax);
-    for (mm=0; mm<zmax; mm++){
+    for (mm=0; mm<ymax; mm++){
       array[nn][mm] = (double *) malloc(sizeof(double) * zmax);
     }
   }
