@@ -2,6 +2,8 @@
 // Created by georg on 16/12/16.
 //
 
+#include "structs.h"
+
 double davg(double *data, int ndata){
   int ii;
   double avg=0.0;
@@ -40,4 +42,19 @@ double dxmax(double *xx, double *yy, int index){
     if (yy[ii]>max) xmax = xx[ii];
   }
   return(xmax);
+}
+
+double wavg2(dat2d *lsmask, dat3d *ww, int nt, int nxmin, int nymin){
+  int ii, jj;
+  double avg=0.0;
+  int norm = 0;
+  for (ii=1; ii<ww->nlat-1; ii++) {
+    for (jj=1; jj<ww->nlon-1; jj++) {
+      if (lsmask->data[ii+nymin][jj+nxmin]==0.0) {
+        avg += ww->data[ii][jj][nt];
+        norm++;
+      }
+    }
+  }
+  return (avg/norm);
 }

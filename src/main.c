@@ -217,7 +217,7 @@ int main(void) {
   // get mid-point divergences
   divergence(&lsmask, NLONMIN, NLONMAX + 1, nlatmin, nlatmax + 1, leap);
 
-  if (DBGFLG>2) {printf("main: get divergence of velocity field\n");fflush(NULL);}
+  if (DBGFLG>2) {printf("main: get dominant wavelengths\n");fflush(NULL);}
   wavelength(&lsmask, NLONMIN, NLONMAX + 1, nlatmin, nlatmax + 1, leap);
 
   // set struct for lh time series

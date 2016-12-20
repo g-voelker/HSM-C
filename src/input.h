@@ -11,7 +11,7 @@
 #define LONMAX 350
 
 // flags
-#define DBGFLG 1
+#define DBGFLG 2
 #define STRSCOR 1
 
 // paths to dynamic data;

@@ -28,6 +28,8 @@ void loadw(dat3d *ww, dat2d *lsmask, int nlatmin, int nlon, int ndlon, int nmont
   start[0] = 0;
   count[0] = days[nmonth] * 24;
 
+  if (DBGFLG>2) {printf("  loadw: get first slice of vertical velocity\n");fflush(NULL);}
+
   // open file
   if ((retval = nc_open(filepath, NC_NOWRITE, &ncID))) ERR(retval);
 
@@ -44,7 +46,7 @@ void loadw(dat3d *ww, dat2d *lsmask, int nlatmin, int nlon, int ndlon, int nmont
         start[2] = (size_t) (mm - lsmask->nlon);
       }
       if (lsmask->data[nn][mm]==0.0){
-        if ((retval = nc_get_vara_double(ncID, varID, start, count, &(ww->data)[0][nn-nlatmin][mm - nlon])))
+        if ((retval = nc_get_vara_double(ncID, varID, start, count, &(ww->data)[nn-nlatmin][mm - nlon][0])))
         ERR(retval);
       }
     }
@@ -62,18 +64,20 @@ void advancew(dat3d *ww, dat2d *lsmask, int nlatmin, int nlon, int ndlon, int nm
   size_t start[3] = {0, 0, 0}, count[3]={days[nmonth] * 24, 1, 1}; // time, lats, lons
   char filepath[MAXCHARLEN];
 
+  if (DBGFLG>2) {printf("  advancew: shifting vertical velocity\n");fflush(NULL);}
   // shift data by one
   for (nn=0; nn < ww->nlat; nn++){
     for (mm=0; mm < 2 * ndlon - 1; mm++){
       for (nt=0; nt < days[nmonth]*24; nt++){
-        ww->data[nt][nn][mm] = ww->data[nt][nn][mm+1];
+        ww->data[nn][mm][nt] = ww->data[nn][mm+1][nt];
       }
     }
   }
 
+  if (DBGFLG>2) {printf("  advancew: advance vertical velocity field by on longitude\n");fflush(NULL);}
   // load one slice of data
   // set file to load from
-  sprintf(filepath, OUTPATH, nmonth);
+  sprintf(filepath, OUTPATH, nmonth + 1);
 
   // open file
   if ((retval = nc_open(filepath, NC_NOWRITE, &ncID))) ERR(retval);
@@ -91,7 +95,7 @@ void advancew(dat3d *ww, dat2d *lsmask, int nlatmin, int nlon, int ndlon, int nm
       start[2] = (size_t) (mm - lsmask->nlon);
     }
     if (lsmask->data[nn][mm]==0.0){
-      if ((retval = nc_get_vara_double(ncID, varID, start, count, &(ww->data)[0][nn-nlatmin][mm - nlon])))
+      if ((retval = nc_get_vara_double(ncID, varID, start, count, &(ww->data)[nn-nlatmin][mm - nlon][0])))
       ERR(retval);
     }
 
@@ -106,7 +110,7 @@ void autocorr(dat2d *lsmask, dat3d *ww, double ***distances, double **lh,
               int leap, int ndlat, int ndlon, int nmonth, int edgeflag) {
   // declare used variables
   size_t days[12] = {31, 28 + (size_t) leap, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31};
-  int nn, mm, nx, ny, nt, index, iterbounds[4], iternlon[2];
+  int nn, mm, nx, ny, nt, index, iterbounds[4], iternlon[2], itershift;
   double *distance, *corr, *norm, avg;
 
   distance = dalloc(distance, CORRLEN);
@@ -126,7 +130,7 @@ void autocorr(dat2d *lsmask, dat3d *ww, double ***distances, double **lh,
     iternlon[1] = nlonmax;
   }
 
-  for (mm=iternlon[0]; mm<=iternlon[1]; mm++) {
+  for (mm=iternlon[0]; mm<iternlon[1]; mm++) {
 
     for (nn = nlatmin; nn < nlatmin + ww->nlat; nn++) {
       // initialize wavelength with zero
@@ -134,26 +138,31 @@ void autocorr(dat2d *lsmask, dat3d *ww, double ***distances, double **lh,
       // boundaries for iteration over latitudes
       iterbounds[0] = (int) fmax(nn - ndlat, nlatmin);
       iterbounds[1] = (int) fmin(nn + ndlat, nlatmin + ww->nlat);
-      iterbounds[2] = (int) fmax(mm - ndlon, nlon);
+      iterbounds[2] = (int) fmax(mm - 2*ndlon, nlon);
       iterbounds[3] = (int) fmin(mm + ndlon, nlon + ww->nlon);
 
       // iterate over all time steps
       for (nt = 0; nt < days[nmonth]; nt++) {
         // get average vertical velocity
-        avg = davg2(ww->data[nt], ww->nlat, ww->nlon);
+        avg = wavg2(lsmask, ww, nt, iterbounds[2], iterbounds[0]);
         // set correlation array and norms to zero
         for (index = 0; index < CORRLEN; index++) corr[index] = norm[index] = 0.0;
         // iterate over lats and lons and add element to corresponding element in correlation array
         // note that we neglect any factor constant at the point since we evaluate maxima only
         for (ny = iterbounds[0]; ny < iterbounds[1]; ny++) {
           for (nx = iterbounds[2]; nx < iterbounds[3]; nx++) {
-            // check distance and get index
-            index = (int) ((distances[nn][ny - nlatmin][nx - 2 * nlon + mm - ndlon] - CORRMIN) / (CORRMAX - CORRMIN) * CORRLEN + 0.5);
-            // add deviation to corr array and increase norm by 1
-            if (index < CORRLEN) {
-              corr[index] +=
-                      (ww->data[nt][ny - nlatmin][nx - nlon] - avg) * (ww->data[nt][nn - nlatmin][mm - nlon] - avg);
-              norm[index]++;
+            if (lsmask->data[ny+iterbounds[0]][nx+iterbounds[2]]==0.0) {
+              // check distance and get index
+              itershift = abs(mm - nlon - ndlon);
+              index = (int) (
+                      (distances[nn - nlatmin][ny - nlatmin][nx - nlon + itershift] - CORRMIN) / (CORRMAX - CORRMIN) *
+                      CORRLEN + 0.5);
+              // add deviation to corr array and increase norm by 1
+              if ((index < CORRLEN) & (index >= 0)) {
+                corr[index] +=
+                        (ww->data[ny - nlatmin][nx - nlon][nt] - avg) * (ww->data[nn - nlatmin][mm - nlon][nt] - avg);
+                norm[index]++;
+              }
             }
           }
         }
@@ -199,6 +208,7 @@ void wavelength(dat2d *lsmask, int nxmin, int nxmax, int nymin, int nymax, int l
     edgeflag = 0;
   };
 
+  if (DBGFLG>2) {printf("  wavelength: calculate distances\n");fflush(NULL);}
   // set up distances arrays
   iterbounds[0] = (int) fmin(2*ndlat, nymax - nymin);
   iterbounds[1] = (int) fmin(2*ndlon, nxmax - nxmin);
@@ -212,12 +222,14 @@ void wavelength(dat2d *lsmask, int nxmin, int nxmax, int nymin, int nymax, int l
     }
   }
 
+  if (DBGFLG>2) {printf("  wavelength: get auto-correlation for all months\n");fflush(NULL);}
   // iterate over months
   for (nmonth=0; nmonth<12; nmonth++) {
     ntime = days[nmonth] * 24;
-    ww.data = dalloc3(ww.data, ntime, (size_t) nlat, (size_t) nlon);
+    ww.data = dalloc3(ww.data, (size_t) nlat, (size_t) nlon, ntime);
     ww.nlat = nlat;
     ww.nlon = nlon;
+    ww.nt = (int) ntime;
     lh = dalloc2(lh, (size_t) nlat, (size_t) (nxmax-nxmin));
     // iterate over longitudes (+ handle edges of domains)
     for (mm=nxmin; mm < itermax; mm++){
@@ -225,18 +237,20 @@ void wavelength(dat2d *lsmask, int nxmin, int nxmax, int nymin, int nymax, int l
       if (mm==nxmin){
         loadw(&ww, lsmask, nymin, mm, ndlon, nmonth, leap);
       } else {
+        printf("%d\n", mm);fflush(NULL);
         advancew(&ww, lsmask, nymin, mm, ndlon, nmonth, leap);
       }
       // do calculation on band (either over half band or just over one column dependeing on edgeflag)
-      // autocorr(lsmask, &ww, distances, lh, mm, nxmin, nxmax, nymin, leap, ndlat, ndlon, nmonth, edgeflag);
+      autocorr(lsmask, &ww, distances, lh, mm, nxmin, nxmax, nymin, leap, ndlat, ndlon, nmonth, edgeflag);
       // save data to netcdf file
     }
 
-    dfree3(ww.data, ntime, (size_t) nlat);
+    dfree3(ww.data, (size_t) nlat, (size_t) nlon);
     dfree2(lh, (size_t) nlat);
   }
+  if (DBGFLG>2) {printf("  wavelength: return to main\n");fflush(NULL);}
 
   // free arrays
-  dfree3(distances, (size_t) (nymax-nymin), (size_t) ndlat);
+  dfree3(distances, (size_t) (nymax-nymin), (size_t) iterbounds[0]);
 }
 

@@ -2,8 +2,20 @@ cmake_minimum_required(VERSION 3.6)
 project(EIS)
 
 #set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
-set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -L/lib -lnetcdf -lc -lfftw3 -lm")
-# include_directories ("/usr/include")
+#set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -L/lib -lnetcdf -lc -lfftw3 -lm")
+
+include_directories ("/usr/include")
+link_directories("/usr/lib")
+
+if (WIN32)
+    find_package(libnetcdf.dll)
+    find_package(libfftw3.dll)
+    find_package(libm)
+elseif (UNIX)
+    find_package(libnetcdf)
+    find_package(libfft3)
+    find_package(libm)
+endif()
 
 set(SOURCE_FILES
         lib/macros.h
@@ -37,6 +49,8 @@ set(SOURCE_FILES
         )
 
 add_executable(EIS ${SOURCE_FILES})
+
+target_link_libraries(EIS netcdf fftw3 m)
 
 # set folder to copy executables to
 # set(PROJECT_BINARY_DIR ${PROJECT_SOURCE_DIR}/bin)

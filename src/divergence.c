@@ -14,9 +14,11 @@
 #include "input.h"
 
 double dist(double lon1, double lon2, double lat1, double lat2){
-  double dd;
-  dd = EARTHRADIUS * 2 * acos(sin(DEG2RAD(lat1)) * sin(DEG2RAD(lat2)) +
-                              cos(DEG2RAD(lat1)) * cos(DEG2RAD(lat2)) * cos(DEG2RAD(lon2 - lon1)));
+  double dd = 0.0;
+  if ((lat1!=lat2)|(lon1!=lon2)){
+    dd = EARTHRADIUS * 2 * acos(sin(DEG2RAD(lat1)) * sin(DEG2RAD(lat2)) +
+                                cos(DEG2RAD(lat1)) * cos(DEG2RAD(lat2)) * cos(DEG2RAD(lon2 - lon1)));
+  }
   return(dd);
 }
 
@@ -88,31 +90,41 @@ void divergence(dat2d *lsmask, int nxmin, int nxmax, int nymin, int nymax, int l
     // iterate over lats and lons
     for (nn = nymin+1; nn < nymax-1; nn++){
       for (mm = nxmin+1; mm < nxmax-1; mm++){
-        // read adjacent and central time series from netcdf file
-        start[1] = (size_t) nn - nymin;
-        start[2] = (size_t) mm - nxmin - 1;
-        if ((retval = nc_get_vara_double(ncID, varID[0], start, count, &uw[0]))) ERR(retval);
-        start[1] = (size_t) nn - nymin;
-        start[2] = (size_t) mm  - nxmin + 1;
-        if ((retval = nc_get_vara_double(ncID, varID[0], start, count, &ue[0]))) ERR(retval);
-        start[1] = (size_t) nn - nymin + 1;
-        start[2] = (size_t) mm - nxmin;
-        if ((retval = nc_get_vara_double(ncID, varID[1], start, count, &vn[0]))) ERR(retval);
-        start[1] = (size_t) nn - nymin - 1;
-        start[2] = (size_t) mm - nxmin;
-        if ((retval = nc_get_vara_double(ncID, varID[1], start, count, &vs[0]))) ERR(retval);
-        start[1] = (size_t) nn - nymin;
-        start[2] = (size_t) mm - nxmin;
-        if ((retval = nc_get_vara_double(ncID, varID[0], start, count, &uc[0]))) ERR(retval);
-        if ((retval = nc_get_vara_double(ncID, varID[1], start, count, &vc[0]))) ERR(retval);
-        if ((retval = nc_get_vara_double(ncID, varID[2], start, count, &mld[0]))) ERR(retval);
+        if (lsmask->data[nn-1][mm] +
+            lsmask->data[nn+1][mm] +
+            lsmask->data[nn][mm-1] +
+            lsmask->data[nn][mm+1] +
+            lsmask->data[nn][mm] == 0.0) {
+          // read adjacent and central time series from netcdf file
+          start[1] = (size_t) nn - nymin;
+          start[2] = (size_t) mm - nxmin - 1;
+          if ((retval = nc_get_vara_double(ncID, varID[0], start, count, &uw[0]))) ERR(retval);
+          start[1] = (size_t) nn - nymin;
+          start[2] = (size_t) mm - nxmin + 1;
+          if ((retval = nc_get_vara_double(ncID, varID[0], start, count, &ue[0]))) ERR(retval);
+          start[1] = (size_t) nn - nymin + 1;
+          start[2] = (size_t) mm - nxmin;
+          if ((retval = nc_get_vara_double(ncID, varID[1], start, count, &vn[0]))) ERR(retval);
+          start[1] = (size_t) nn - nymin - 1;
+          start[2] = (size_t) mm - nxmin;
+          if ((retval = nc_get_vara_double(ncID, varID[1], start, count, &vs[0]))) ERR(retval);
+          start[1] = (size_t) nn - nymin;
+          start[2] = (size_t) mm - nxmin;
+          if ((retval = nc_get_vara_double(ncID, varID[0], start, count, &uc[0]))) ERR(retval);
+          if ((retval = nc_get_vara_double(ncID, varID[1], start, count, &vc[0]))) ERR(retval);
+          if ((retval = nc_get_vara_double(ncID, varID[2], start, count, &mld[0]))) ERR(retval);
 
-        // calculate vertical velocity
-        for (nhour=0; nhour < count[0]; nhour++){
-          ww[nhour] = 0.5 * ((vn[nhour] - vc[nhour])/dys[nn - nymin] +
-                             (vc[nhour] - vs[nhour])/dys[nn - nymin - 1] +
-                             (ue[nhour] - uc[nhour])/dx[nn - nymin - 1] +
-                             (uc[nhour] - uw[nhour])/dx[nn - nymin - 1]) * mld[nhour];
+          // calculate vertical velocity
+          for (nhour = 0; nhour < count[0]; nhour++) {
+            ww[nhour] = 0.5 * ((vn[nhour] - vc[nhour]) / dys[nn - nymin] +
+                               (vc[nhour] - vs[nhour]) / dys[nn - nymin - 1] +
+                               (ue[nhour] - uc[nhour]) / dx[nn - nymin - 1] +
+                               (uc[nhour] - uw[nhour]) / dx[nn - nymin - 1]) * mld[nhour];
+          }
+        } else {
+          for (nhour = 0; nhour < count[0]; nhour++) {
+            ww[nhour] = NC_FILL_DOUBLE;
+          }
         }
 
         // dump point to netCDF file
