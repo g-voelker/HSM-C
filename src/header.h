@@ -1,12 +1,12 @@
 #include "../lib/constants.h"
 
 // netcdf error macros
-#define ERRCODE 2
-#define ERR(e) {printf("Error: %s\n", nc_strerror(e)); exit(ERRCODE);}
+#define ERR(e) {printf("Error: %s\n", nc_strerror(e)); exit(EXIT_FAILURE);}
 
 // error macros
-#define DIMERR(e) {printf("Error: too few points in given domain. Hybrid model aborted.\n"); exit(e);}
-#define VALERR(e) {printf("Error: size of domain too small for autocorrelation calculation. Hybrid model aborted.\n"); exit(e);}
+#define GENERR {printf("Error: Something went wrong. Exiting now.\n"); exit(EXIT_FAILURE);};
+#define DIMERR {printf("Error: too few points in given domain. Hybrid model aborted.\n"); exit(EXIT_FAILURE);}
+#define VALERR {printf("Error: size of domain too small for autocorrelation calculation. Hybrid model aborted.\n"); exit(EXIT_FAILURE);}
 
 // convert between degrees to radians
 #define DEG2RAD(deg) ((deg)*PI/180.0)
@@ -34,8 +34,8 @@
 // spatial autocorrelation parameters
 // these parameters are used for the analysis of the vertical velocity field
 // CORRMIN / CORRMAX are the smallest / largest possible wavelengths
-#define CORRMIN 200e3
-#define CORRMAX 1200e3
+#define CORRMIN 50e3
+#define CORRMAX 100e3
 #define CORRLEN 21
 
 // macros for variable / attribute name space
@@ -63,6 +63,8 @@
 #define EIN_LONG "work done by wind on ocean surface"
 #define EOUT "phi_IW"
 #define EOUT_LONG "energy flux due to radiated IWs"
+#define LH "length_scale"
+#define LH_LONG "horizontal length scale from auto-correlation"
 
 #define DEGREES_NORTH "degrees_north"
 #define DEGREES_EAST "degrees_east"

@@ -37,8 +37,10 @@ double davg3(double ***data, int n1, int n2, int n3){
 
 double dxmax(double *xx, double *yy, int index){
   int ii;
-  double max=yy[0], xmax=xx[0];
-  for (ii=0; ii<index; ii++){
+  double max, xmax;
+  max = yy[0];
+  xmax = xx[0];
+  for (ii=1; ii<index; ii++){
     if (yy[ii]>max) xmax = xx[ii];
   }
   return(xmax);

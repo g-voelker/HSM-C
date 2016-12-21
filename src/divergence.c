@@ -83,7 +83,7 @@ void divergence(dat2d *lsmask, int nxmin, int nxmax, int nymin, int nymax, int l
       if((retval = nc_inq_dimlen(ncID, dimID[1], &latlen))) ERR(retval);
       if((retval = nc_inq_dimlen(ncID, dimID[2], &lonlen))) ERR(retval);
       if ((latlen<3) | (lonlen<3)){
-        DIMERR(2);
+        DIMERR;
       }
     }
 

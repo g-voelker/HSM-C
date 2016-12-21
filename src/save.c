@@ -25,7 +25,7 @@ int sum(size_t *array, int num){
 }
 
 void initnc(dat2d *lsmask, int* time, int nxmin, int nxmax, int nymin, int nymax, int leap){
-  int *timeSliceS, *timeSliceH, varID[6], nn = 0, mm = 0;
+  int *timeSliceS, *timeSliceH, varID[7], nn = 0, mm = 0;
   size_t nt = (365 + (size_t) leap) * 24;
   size_t chunksize[3] = {28*24, CHUNK_LAT, CHUNK_LON};
   int ncID = 0, retval, dimID[3], dimVarID[3];
@@ -113,6 +113,11 @@ void initnc(dat2d *lsmask, int* time, int nxmin, int nxmax, int nymin, int nymax
     if ((retval = nc_def_var_chunking(ncID, varID[5], NC_CHUNKED, chunksize))) ERR(retval);
     if ((retval = nc_put_att_text(ncID, varID[5], UNITS, strlen(WPM2), WPM2))) ERR(retval);
     if ((retval = nc_put_att_text(ncID, varID[5], LONGNAME, strlen(EOUT_LONG), EOUT_LONG))) ERR(retval);
+    // horizontal length scale
+    if ((retval = nc_def_var(ncID, LH, NC_DOUBLE, 3, dimID, &varID[6]))) ERR(retval);
+    if ((retval = nc_def_var_chunking(ncID, varID[5], NC_CHUNKED, chunksize))) ERR(retval);
+    if ((retval = nc_put_att_text(ncID, varID[5], UNITS, strlen(METER), METER))) ERR(retval);
+    if ((retval = nc_put_att_text(ncID, varID[5], LONGNAME, strlen(LH_LONG), LH_LONG))) ERR(retval);
 
     // close netcdf file
     if ((retval = nc_close(ncID))) ERR(retval);
@@ -210,6 +215,77 @@ void savePoint(double* uu, double* vv, double* mld, double* taux, double* tauy,
   free(index);
 }
 
-void savelh(double ***lh, int nmonth, int leap){
-  // save data to file
+void savelh(double ***lh, int nxmin, int nxmax, int nymin, int nymax, int nmonth, int leap){
+  /*int nn = 0, nt = 0, mon = 0, ncID, retval, varID, mm = 0;
+  int *index;
+  size_t start[3], count[3];
+  time_t aux;
+  struct tm *auxTime;
+  double *uSlice, *vSlice, *mldSlice, *windWork;
+  char filepath[MAXCHARLEN];
+//  char test[MAXCHARLEN];
+
+  if (DBGFLG>2) {printf("  savePoint: set slicing indicees\n"); fflush(NULL);}
+
+  index = ialloc(index, (size_t) 13);
+  index[0] = 0;
+  for (nt=0; nt< ((356 + leap) * 24); nt++){
+    aux = (time_t) time[nt];
+    auxTime = gmtime( &aux );
+//    strftime(test, (size_t) MAXCHARLEN, "%c\n", auxTime);
+//    if (nt<20) printf("%s", test);
+    if ((auxTime->tm_mon) > mon){
+      mon += 1;
+      index[mon] = nt;
+    }
+  }
+  index[12] = ((365 + leap) * 24);
+
+//  for (mon=0; mon<13; mon++){
+//    printf("%d\t%d\n", mon, index[mon]);
+//  }
+
+  for (nn=0; nn<12; nn++) {
+    // slice data according to month
+    lhSlice = dalloc(windWork, (size_t) (index[nn + 1] - index[nn]));
+
+    // set filepath as above
+    sprintf(filepath, OUTPATH, nn+1);
+
+    // set hyperslab indicees
+    start[0] = (size_t) 0;
+    count[0] = (size_t) (index[nn + 1] - index[nn]);
+    start[1] = (size_t) (ny-nymin);
+    count[1] =  1;
+    start[2] = (size_t) (nx-nxmin);
+    count[2] =  1;
+
+    // open nc file
+    if ((retval = nc_open(filepath, NC_WRITE, &ncID))) ERR(retval);
+
+    // get variable ID and write hyperslab into file
+    if ((retval = nc_inq_varid(ncID, XVEL, &varID))) ERR(retval);
+    if ((retval = nc_put_vara_double(ncID, varID, start, count, &uSlice[0]))) ERR(retval);
+
+    // get variable ID and write hyperslab into file
+    if ((retval = nc_inq_varid(ncID, YVEL, &varID))) ERR(retval);
+    if ((retval = nc_put_vara_double(ncID, varID, start, count, &vSlice[0]))) ERR(retval);
+
+    // get variable ID and write hyperslab into file
+    if ((retval = nc_inq_varid(ncID, MLD, &varID))) ERR(retval);
+    if ((retval = nc_put_vara_double(ncID, varID, start, count, &mldSlice[0]))) ERR(retval);
+
+    // get variable ID and write hyperslab into file
+    if ((retval = nc_inq_varid(ncID, EIN, &varID))) ERR(retval);
+    if ((retval = nc_put_vara_double(ncID, varID, start, count, &windWork[0]))) ERR(retval);
+
+    // close nc file
+    if ((retval = nc_close(ncID))) ERR(retval);
+
+    free(uSlice);
+    free(vSlice);
+    free(mldSlice);
+    free(windWork);
+  }
+  free(index);*/
 }

@@ -226,6 +226,8 @@ int main(void) {
   lh.time = dalloc(lh.time, (size_t) lh.ntime);
   for (nn=0; nn < lh.ntime; nn++) lh.time[nn] = (double) time[nn];
 
+  exit(EXIT_SUCCESS);
+
   if (DBGFLG>1) {printf("main: begin loop over points\n");fflush(NULL);}
   // calculate hybrid model on all points
   for (nn=nlatmin; nn<=nlatmax; nn++){
@@ -254,5 +256,5 @@ int main(void) {
   free(damp.y2);
   free(lh.time);
 
-  return -1;
+  return(EXIT_SUCCESS);
 }

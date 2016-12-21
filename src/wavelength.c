@@ -87,7 +87,7 @@ void advancew(dat3d *ww, dat2d *lsmask, int nlatmin, int nlon, int ndlon, int nm
 
   // read arrays
   for (nn=nlatmin; nn<nlatmin + ww->nlat; nn++){
-    mm = nlon + 2 * ndlon;
+    mm = nlon + 2 * ndlon - 1;
     // read slice
     if (mm < 0) {
       start[2] = (size_t) (lsmask->nlon + mm);
@@ -117,17 +117,19 @@ void autocorr(dat2d *lsmask, dat3d *ww, double ***distances, double **lh,
   corr = dalloc(corr, CORRLEN);
   norm = dalloc(norm, CORRLEN);
 
-//  for (index=0; index<CORRLEN; index++) distance[index]
+  for (index=0; index<CORRLEN; index++) distance[index] = CORRMIN + (CORRMAX - CORRMIN)/(CORRLEN - 1) * index;
 
-  if ((edgeflag==0)||((nlon>=nlonmin+ndlon)&&(nlon<=nlonmax-ndlon))) {
+  if ((edgeflag==0)||((nlon >= nlonmin)&&(nlon <= nlonmax - 2 * ndlon))) {
     iternlon[0] = nlon + ndlon;
     iternlon[1] = nlon + ndlon + 1;
-  } else if (nlon == nlonmin) {
+  } else if ((edgeflag==1)&&(nlon == nlonmin)) {
     iternlon[0] = nlonmin;
     iternlon[1] = nlonmin + ndlon + 1;
-  } else if (nlon == nlonmax - 2*ndlon - 1){
+  } else if ((edgeflag==1)&&(nlon == nlonmax - 2*ndlon)) {
     iternlon[0] = nlon + ndlon;
     iternlon[1] = nlonmax;
+  } else {
+    GENERR; fflush(NULL);
   }
 
   for (mm=iternlon[0]; mm<iternlon[1]; mm++) {
@@ -155,7 +157,7 @@ void autocorr(dat2d *lsmask, dat3d *ww, double ***distances, double **lh,
               // check distance and get index
               itershift = abs(mm - nlon - ndlon);
               index = (int) (
-                      (distances[nn - nlatmin][ny - nlatmin][nx - nlon + itershift] - CORRMIN) / (CORRMAX - CORRMIN) *
+                      (distances[nn - nlatmin][ny - iterbounds[0]][nx - nlon + itershift] - CORRMIN) / (CORRMAX - CORRMIN) *
                       CORRLEN + 0.5);
               // add deviation to corr array and increase norm by 1
               if ((index < CORRLEN) & (index >= 0)) {
@@ -237,10 +239,10 @@ void wavelength(dat2d *lsmask, int nxmin, int nxmax, int nymin, int nymax, int l
       if (mm==nxmin){
         loadw(&ww, lsmask, nymin, mm, ndlon, nmonth, leap);
       } else {
-        printf("%d\n", mm);fflush(NULL);
         advancew(&ww, lsmask, nymin, mm, ndlon, nmonth, leap);
       }
       // do calculation on band (either over half band or just over one column dependeing on edgeflag)
+
       autocorr(lsmask, &ww, distances, lh, mm, nxmin, nxmax, nymin, leap, ndlat, ndlon, nmonth, edgeflag);
       // save data to netcdf file
     }
