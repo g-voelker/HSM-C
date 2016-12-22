@@ -45,10 +45,8 @@ void loadw(dat3d *ww, dat2d *lsmask, int nlatmin, int nlon, int ndlon, int nmont
       } else if (mm > lsmask->nlon) {
         start[2] = (size_t) (mm - lsmask->nlon);
       }
-      if (lsmask->data[nn][mm]==0.0){
-        if ((retval = nc_get_vara_double(ncID, varID, start, count, &(ww->data)[nn-nlatmin][mm - nlon][0])))
-        ERR(retval);
-      }
+      if ((retval = nc_get_vara_double(ncID, varID, start, count, &(ww->data)[nn-nlatmin][mm - nlon][0])))
+      ERR(retval);
     }
   }
 
@@ -94,11 +92,8 @@ void advancew(dat3d *ww, dat2d *lsmask, int nlatmin, int nlon, int ndlon, int nm
     } else if (mm > lsmask -> nlon) {
       start[2] = (size_t) (mm - lsmask->nlon);
     }
-    if (lsmask->data[nn][mm]==0.0){
-      if ((retval = nc_get_vara_double(ncID, varID, start, count, &(ww->data)[nn-nlatmin][mm - nlon][0])))
-      ERR(retval);
-    }
-
+    if ((retval = nc_get_vara_double(ncID, varID, start, count, &(ww->data)[nn-nlatmin][mm - nlon][0])))
+    ERR(retval);
   }
 
   // close nc file
@@ -153,14 +148,14 @@ void autocorr(dat2d *lsmask, dat3d *ww, double ***distances, double **lh,
         // note that we neglect any factor constant at the point since we evaluate maxima only
         for (ny = iterbounds[0]; ny < iterbounds[1]; ny++) {
           for (nx = iterbounds[2]; nx < iterbounds[3]; nx++) {
-            if (lsmask->data[ny+iterbounds[0]][nx+iterbounds[2]]==0.0) {
+            if (ww->data[nn - nlatmin][mm - nlon][nt]!=NC_FILL_DOUBLE) {
               // check distance and get index
               itershift = abs(mm - nlon - ndlon);
               index = (int) (
                       (distances[nn - nlatmin][ny - iterbounds[0]][nx - nlon + itershift] - CORRMIN) / (CORRMAX - CORRMIN) *
                       CORRLEN + 0.5);
               // add deviation to corr array and increase norm by 1
-              if ((index < CORRLEN) & (index >= 0)) {
+              if ((index < CORRLEN) & (index >= 0) & (ww->data[ny - nlatmin][nx - nlon][nt]!=NC_FILL_DOUBLE)) {
                 corr[index] +=
                         (ww->data[ny - nlatmin][nx - nlon][nt] - avg) * (ww->data[nn - nlatmin][mm - nlon][nt] - avg);
                 norm[index]++;
@@ -242,9 +237,9 @@ void wavelength(dat2d *lsmask, int nxmin, int nxmax, int nymin, int nymax, int l
         advancew(&ww, lsmask, nymin, mm, ndlon, nmonth, leap);
       }
       // do calculation on band (either over half band or just over one column dependeing on edgeflag)
-
       autocorr(lsmask, &ww, distances, lh, mm, nxmin, nxmax, nymin, leap, ndlat, ndlon, nmonth, edgeflag);
       // save data to netcdf file
+      savelh(lh, nxmin, nxmax, nymin, nymax, nmonth, leap);
     }
 
     dfree3(ww.data, (size_t) nlat, (size_t) nlon);

@@ -2,6 +2,7 @@
 // Created by georg on 16/12/16.
 //
 
+#include <netcdf.h>
 #include "structs.h"
 
 double davg(double *data, int ndata){
@@ -41,7 +42,11 @@ double dxmax(double *xx, double *yy, int index){
   max = yy[0];
   xmax = xx[0];
   for (ii=1; ii<index; ii++){
-    if (yy[ii]>max) xmax = xx[ii];
+    if (yy[ii]>
+            max) {
+      max = yy[ii];
+      xmax = xx[ii];
+    }
   }
   return(xmax);
 }
@@ -52,7 +57,7 @@ double wavg2(dat2d *lsmask, dat3d *ww, int nt, int nxmin, int nymin){
   int norm = 0;
   for (ii=1; ii<ww->nlat-1; ii++) {
     for (jj=1; jj<ww->nlon-1; jj++) {
-      if (lsmask->data[ii+nymin][jj+nxmin]==0.0) {
+      if (ww->data[ii][jj][nt] != NC_FILL_DOUBLE) {
         avg += ww->data[ii][jj][nt];
         norm++;
       }

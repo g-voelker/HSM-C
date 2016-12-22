@@ -215,7 +215,7 @@ void savePoint(double* uu, double* vv, double* mld, double* taux, double* tauy,
   free(index);
 }
 
-void savelh(double ***lh, int nxmin, int nxmax, int nymin, int nymax, int nmonth, int leap){
+void savelh(double **lh, int nxmin, int nxmax, int nymin, int nymax, int nmonth, int leap){
   /*int nn = 0, nt = 0, mon = 0, ncID, retval, varID, mm = 0;
   int *index;
   size_t start[3], count[3];
