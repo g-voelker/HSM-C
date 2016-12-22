@@ -77,19 +77,19 @@ int main(void) {
   }
 
   // allocate variables and set time
-  double taux[8760 + leap * 24], tauy[8760 + leap * 24],
-          mld[8760 + leap * 24],
-          uu[8760 + leap * 24], vv[8760 + leap * 24];
-  int time[8760 + leap * 24];
+  double taux[10248 + leap * 24], tauy[10248 + leap * 24],
+          mld[10248 + leap * 24],
+          uu[10248 + leap * 24], vv[10248 + leap * 24];
+  int time[10248 + leap * 24];
 
-  for (nn=0; nn< (8760 + leap * 24); nn++){
+  for (nn=0; nn< (10248 + leap * 24); nn++){
     mld[nn] = taux[nn] = tauy[nn] = 0.0;
     time[nn] = 0;
   }
 
   // set basic time constructor
-  tcon.tm_year = YEAR - 1900;
-  tcon.tm_mon = 0;
+  tcon.tm_year = YEAR - 1901;
+  tcon.tm_mon = 11;
   tcon.tm_mday = 1;
   tcon.tm_hour = 1;
   tcon.tm_min = 0;
@@ -99,7 +99,7 @@ int main(void) {
 
   time_t referenceTime;
   referenceTime = mktime(&tcon);
-  for (nn=0; nn< ((365 + leap) * 24); nn++){
+  for (nn=0; nn< ((365 + 62 + leap) * 24); nn++){
     time[nn] = (int) referenceTime + nn*3600;
 
   }
@@ -201,7 +201,7 @@ int main(void) {
         // calculate u and v
         solve(fft, ifft, r0, f0, rho0, leap, taux, tauy, mld, freqs, aux, AUX);
         // set velocities
-        for (ll = 0; ll < ((365 + leap) * 24); ll++) {
+        for (ll = 0; ll < ((365 + 62 + leap) * 24); ll++) {
           uu[ll] = aux[ll][0];
           vv[ll] = aux[ll][1];
         }
@@ -224,7 +224,7 @@ int main(void) {
   dat1d lh;
   lh.ntime = (365+leap)*24;
   lh.time = dalloc(lh.time, (size_t) lh.ntime);
-  for (nn=0; nn < lh.ntime; nn++) lh.time[nn] = (double) time[nn];
+  for (nn=0; nn < lh.ntime; nn++) lh.time[nn] = (double) time[nn + 31*24];
 
   exit(EXIT_SUCCESS);
 

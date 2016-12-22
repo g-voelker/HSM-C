@@ -22,7 +22,13 @@ void loadw(dat3d *ww, dat2d *lsmask, int nlatmin, int nlon, int ndlon, int nmont
   char filepath[MAXCHARLEN];
 
   // set file to load from
-  sprintf(filepath, OUTPATH, nmonth+1);
+  if (nmonth==0) {
+    sprintf(filepath, AUXPATH, 1);
+  } else if (nmonth==13) {
+    sprintf(filepath, AUXPATH, 12);
+  } else {
+    sprintf(filepath, OUTPATH, nmonth);
+  }
 
   // count indicees
   start[0] = 0;
@@ -75,7 +81,13 @@ void advancew(dat3d *ww, dat2d *lsmask, int nlatmin, int nlon, int ndlon, int nm
   if (DBGFLG>2) {printf("  advancew: advance vertical velocity field by on longitude\n");fflush(NULL);}
   // load one slice of data
   // set file to load from
-  sprintf(filepath, OUTPATH, nmonth + 1);
+  if (nmonth==0) {
+    sprintf(filepath, AUXPATH, 1);
+  } else if (nmonth==13) {
+    sprintf(filepath, AUXPATH, 12);
+  } else {
+    sprintf(filepath, OUTPATH, nmonth);
+  }
 
   // open file
   if ((retval = nc_open(filepath, NC_NOWRITE, &ncID))) ERR(retval);
@@ -104,7 +116,7 @@ void autocorr(dat2d *lsmask, dat3d *ww, double ***distances, double **lh,
               int nlon, int nlonmin, int nlonmax, int nlatmin,
               int leap, int ndlat, int ndlon, int nmonth, int edgeflag) {
   // declare used variables
-  size_t days[12] = {31, 28 + (size_t) leap, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31};
+  size_t days[14] = {31, 31, 28 + (size_t) leap, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31, 31};
   int nn, mm, nx, ny, nt, index, iterbounds[4], iternlon[2], itershift;
   double *distance, *corr, *norm, avg;
 
@@ -179,12 +191,12 @@ void autocorr(dat2d *lsmask, dat3d *ww, double ***distances, double **lh,
 }
 
 void wavelength(dat2d *lsmask, int nxmin, int nxmax, int nymin, int nymax, int leap){
-  size_t days[12] = {31, 28 + (size_t) leap, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31};
+  size_t days[14] = {31, 31, 28 + (size_t) leap, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31, 31};
   dat3d ww;
   size_t ntime;
   int nmonth, nlat, nlon, ndlon, nn, nx, ny, mm, itermax, edgeflag, ndlat, iterbounds[2];
   double latmax, dx;
-  double ***distances, **lh;
+  double ***distances, ***lh;
 
   // prepare constants
   nlat = nymax - nymin; // number of points in latuitude of w-slice
@@ -221,13 +233,13 @@ void wavelength(dat2d *lsmask, int nxmin, int nxmax, int nymin, int nymax, int l
 
   if (DBGFLG>2) {printf("  wavelength: get auto-correlation for all months\n");fflush(NULL);}
   // iterate over months
-  for (nmonth=0; nmonth<12; nmonth++) {
+  lh = dalloc3(lh, 14, (size_t) nlat, (size_t) (nxmax-nxmin));
+  for (nmonth=0; nmonth<14; nmonth++) {
     ntime = days[nmonth] * 24;
     ww.data = dalloc3(ww.data, (size_t) nlat, (size_t) nlon, ntime);
     ww.nlat = nlat;
     ww.nlon = nlon;
     ww.nt = (int) ntime;
-    lh = dalloc2(lh, (size_t) nlat, (size_t) (nxmax-nxmin));
     // iterate over longitudes (+ handle edges of domains)
     for (mm=nxmin; mm < itermax; mm++){
       // load vertical velocity band
@@ -237,14 +249,15 @@ void wavelength(dat2d *lsmask, int nxmin, int nxmax, int nymin, int nymax, int l
         advancew(&ww, lsmask, nymin, mm, ndlon, nmonth, leap);
       }
       // do calculation on band (either over half band or just over one column dependeing on edgeflag)
-      autocorr(lsmask, &ww, distances, lh, mm, nxmin, nxmax, nymin, leap, ndlat, ndlon, nmonth, edgeflag);
-      // save data to netcdf file
-      savelh(lh, nxmin, nxmax, nymin, nymax, nmonth, leap);
+      autocorr(lsmask, &ww, distances, lh[nmonth], mm, nxmin, nxmax, nymin, leap, ndlat, ndlon, nmonth, edgeflag);
     }
-
     dfree3(ww.data, (size_t) nlat, (size_t) nlon);
-    dfree2(lh, (size_t) nlat);
   }
+
+  // save data to netcdf file
+  //savelh(lh, nxmin, nxmax, nymin, nymax, nmonth, leap);
+  dfree3(lh, 14, (size_t) nlat);
+
   if (DBGFLG>2) {printf("  wavelength: return to main\n");fflush(NULL);}
 
   // free arrays

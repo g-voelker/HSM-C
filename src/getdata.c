@@ -81,16 +81,19 @@ void getdata(int nlat, int nlon, int leap,
   pos[0]  = (size_t) nlat;
   pos[1]  = (size_t) nlon;
 
-  mmld = dalloc(mmld, 14);
+  mmld = dalloc(mmld, 16);
 
   // set hours of mid months
   tcon.tm_year = YEAR - 1901;
-  tcon.tm_mon = 11;
+  tcon.tm_mon = 10;
   tcon.tm_mday = 15;
   itime[0] = mktime(&tcon);
 
+  tcon.tm_mon = 11;
+  itime[1] = mktime(&tcon);
+
   tcon.tm_year = YEAR - 1900;
-  for (nn=1; nn<13; nn++){
+  for (nn=2; nn<14; nn++){
     tcon.tm_mon = (nn - 1) % 12;
     tcon.tm_mday = 15;
 
@@ -100,28 +103,33 @@ void getdata(int nlat, int nlon, int leap,
   tcon.tm_year = YEAR - 1899;
   tcon.tm_mon = 0;
   tcon.tm_mday = 15;
-  itime[13] = mktime(&tcon);
+  itime[14] = mktime(&tcon);
+
+  tcon.tm_mon = 0;
+  itime[15] = mktime(&tcon);
 
   if (DBGFLG>2) { printf("  getdata: load MLD\n"); fflush(NULL);}
   // load mixed layer depth
-  for (nmonth=1; nmonth<=12; nmonth++){
-    sprintf(filepath, MLDPATH, nmonth);
+  for (nmonth=0; nmonth<12; nmonth++){
+    sprintf(filepath, MLDPATH, nmonth+1);
     // open regridded netCDF file
     if ((retval = nc_open(filepath, NC_NOWRITE, &ncID))) ERR(retval);
     // get id of dataset
     if ((retval = nc_inq_varid(ncID, "DEPTH_MIXED_LAYER", &dataID))) ERR(retval);
     // get variable at position (nlon, nlat) and write into array
-    if ((retval = nc_get_var1_double(ncID, dataID, pos, &mmld[nmonth]))) ERR(retval);
+    if ((retval = nc_get_var1_double(ncID, dataID, pos, &mmld[nmonth+2]))) ERR(retval);
     // close nc file
     if ((retval = nc_close(ncID))) ERR(retval);
   }
-  mmld[0]   = mmld[12];
-  mmld[13]  = mmld[1];
+  mmld[0]   = mmld[12]; // set november of previous year
+  mmld[1]   = mmld[13]; // set december of previous year
+  mmld[14]  = mmld[2]; // set january of next year
+  mmld[15]  = mmld[3]; // set february of next year
 
   if (DBGFLG>2) { printf("  getdata: interpolate MLD in time\n"); fflush(NULL);}
-  for (nn=0;nn<8760+leap*24;nn++){
+  for (nn=0;nn<10248+leap*24;nn++){
     // check position relative to mid month times
-    for (mm=1;mm<=12;mm++) {
+    for (mm=1;mm<15;mm++) {
       if (itime[mm]>time[nn]){
         break;
       }
@@ -139,8 +147,16 @@ void getdata(int nlat, int nlon, int leap,
   // iterate over months
 
   nt = 0;
-  for (nmonth=1; nmonth<=12; nmonth++) { // this MUST start at 1.
-    sprintf(filepath, STRSPATH, YEAR, nmonth);
+  for (nmonth=0; nmonth<14; nmonth++) {
+
+    if (nmonth==0) {
+      sprintf(filepath, STRSPATH, YEAR-1, 12);
+    } else if (nmonth==13){
+      sprintf(filepath, STRSPATH, YEAR+1, 1);
+    } else {
+      sprintf(filepath, STRSPATH, YEAR, nmonth + 1);
+    }
+
     // open netcdf file
     if ((retval = nc_open(filepath, NC_NOWRITE, &ncID))) ERR(retval);
     // get time dimension

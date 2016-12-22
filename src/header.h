@@ -19,10 +19,10 @@
 #define DAMPPATH "../static/park_et_al.nc"
 #define LSMPATH "../static/lsm-hres.nc"
 
-// the length of the DFTs is set to 2^5 * 7^3 in accordance with the maximum cutoff for long damping times.
+// the length of the DFTs is set to 2^4 * 3^6 in accordance with the maximum cutoff for long damping times.
 // this value is set to preserve performance while making sure the cutoff is long enough
 // edit only if you know what you do; values are related to ringing effects
-#define DFFT_LEN 10976
+#define DFFT_LEN 11664
 
 // chunking settings for nc files saved
 // there is a performance / diec space trade off

@@ -11,7 +11,7 @@
 #define LONMAX 325
 
 // flags
-#define DBGFLG 2
+#define DBGFLG 3
 #define STRSCOR 1
 
 // paths to dynamic data;
@@ -20,3 +20,4 @@
 #define MLDPATH "/run/media/georg/TRANSCEND/EIS2/MIMOC/MIMOC_ML_v2.2_CT_SA_MLP_month%02d_regrid.nc"
 #define STRSPATH "/run/media/georg/TRANSCEND/EIS2/NCEP-CFSR/stress/p2/wndstrs.gdas.%d%02d.fast.nc"
 #define OUTPATH "/run/media/georg/TRANSCEND/EIS2/results/eis3_test/test_lh_%02d.nc"
+#define AUXPATH "/run/media/georg/TRANSCEND/EIS2/results/eis3_test/test_lh_aux_%02d.nc"

@@ -15,13 +15,13 @@ void solve(fftw_plan fft, fftw_plan ifft,
   transfer = (fftw_complex*) fftw_malloc(sizeof(fftw_complex) * DFFT_LEN);
   if (DBGFLG>2) { printf("  solveode: resetting auxiliariy arrays\n"); fflush(NULL);}
   // reset forcing and initialize transfer function
-  for (nn=0; nn<(365+leap)*24; nn++){
+  for (nn=0; nn<(365 + 62 + leap)*24; nn++){
     transfer[nn][0] = 1.0;
     transfer[nn][1] = 0.0;
     aux[nn][0] = taux[nn] / mld[nn] / rho0;
     aux[nn][1] = tauy[nn] / mld[nn] / rho0;
   }
-  for (nn=(365+leap)*24; nn<DFFT_LEN; nn++){
+  for (nn=(365 + 62 + leap)*24; nn<DFFT_LEN; nn++){
     transfer[nn][0] = 1.0;
     transfer[nn][1] = 0.0;
     aux[nn][0] = 0.0;

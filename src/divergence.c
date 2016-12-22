@@ -29,7 +29,7 @@ void divergence(dat2d *lsmask, int nxmin, int nxmax, int nymin, int nymax, int l
 
   // indexing
   int nn, mm, nmonth, nhour;
-  size_t days[12] = {31, 28 + (size_t) leap, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31};
+  size_t days[14] = {31, 31, 28 + (size_t) leap, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31, 31};
 
   // netcdf
   int retval, ncID, varID[4], dimID[3];
@@ -49,7 +49,7 @@ void divergence(dat2d *lsmask, int nxmin, int nxmax, int nymin, int nymax, int l
   }
 
   // loop over snap shots
-  for (nmonth=0; nmonth< 12; nmonth++){
+  for (nmonth=0; nmonth< 14; nmonth++){
     // set count and chunksize in time
     count[0] = chunksize[0] = days[nmonth]*24;
 
@@ -63,7 +63,13 @@ void divergence(dat2d *lsmask, int nxmin, int nxmax, int nymin, int nymax, int l
     ww = dalloc(ww, days[nmonth]*24);
     mld = dalloc(mld, days[nmonth]*24);
 
-    sprintf(filepath, OUTPATH, nmonth+1);
+    if (nn==0) {
+      sprintf(filepath, AUXPATH, 1);
+    } else if (nn==13) {
+      sprintf(filepath, AUXPATH, 12);
+    } else {
+      sprintf(filepath, OUTPATH, nmonth);
+    }
     // open netcdf file and read u, v, mld
     if ((retval = nc_open(filepath, NC_WRITE, &ncID))) ERR(retval);
 
