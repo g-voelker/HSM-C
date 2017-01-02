@@ -144,20 +144,22 @@ void getdata(int nlat, int nlon, int leap,
   // load wind stress data
   if (DBGFLG>2) { printf("  getdata: load stress data\n"); fflush(NULL);}
 
-  // iterate over months
+    // iterate over months
 
   nt = 0;
   for (nmonth=0; nmonth<14; nmonth++) {
+    if (DBGFLG>2) { printf("  nmonth: %d\n", nmonth); fflush(NULL);}
 
-    if (nmonth==0) {
-      sprintf(filepath, STRSPATH, YEAR-1, 12);
-    } else if (nmonth==13){
-      sprintf(filepath, STRSPATH, YEAR+1, 1);
-    } else {
-      sprintf(filepath, STRSPATH, YEAR, nmonth + 1);
-    }
+      if (nmonth==0) {
+          sprintf(filepath, STRSPATH, YEAR-1, 12);
+      } else if (nmonth==13){
+          sprintf(filepath, STRSPATH, YEAR+1, 1);
+      } else {
+          sprintf(filepath, STRSPATH, YEAR, nmonth + 1);
+      }
+      if (DBGFLG>2) { printf(filepath); fflush(NULL);}
 
-    // open netcdf file
+      // open netcdf file
     if ((retval = nc_open(filepath, NC_NOWRITE, &ncID))) ERR(retval);
     // get time dimension
     if ((retval = nc_inq_varid(ncID, TIME, &timeID))) ERR(retval);
