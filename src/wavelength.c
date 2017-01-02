@@ -6,6 +6,7 @@
 #include <stdio.h>
 #include <netcdf.h>
 #include <math.h>
+#include <string.h>
 #include "../lib/structs.h"
 #include "../lib/dalloc.h"
 #include "../lib/stats.h"
@@ -24,26 +25,41 @@ void loadw(dat3d *ww, dat2d *lsmask, int nlatmin, int nlon, int ndlon, int nmont
   // set file to load from
   if (nmonth==0) {
     sprintf(filepath, AUXPATH, 1);
+    count[0] = days[0] * 24;
   } else if (nmonth==13) {
     sprintf(filepath, AUXPATH, 12);
+    count[0] = days[11] * 24;
   } else {
     sprintf(filepath, OUTPATH, nmonth);
+    count[0] = days[nmonth-1] * 24;
   }
 
   // count indicees
   start[0] = 0;
-  count[0] = days[nmonth] * 24;
 
   if (DBGFLG>2) {printf("  loadw: get first slice of vertical velocity\n");fflush(NULL);}
 
   // open file
   if ((retval = nc_open(filepath, NC_NOWRITE, &ncID))) ERR(retval);
 
+//  int dimid[3] = {0,0,0};
+//  size_t dimsize[3] = {0,0,0};
+//
+//  if ((retval = nc_inq_dimid(ncID, LATS, &dimid[0]))) ERR(retval);
+//  if ((retval = nc_inq_dimid(ncID, LONS, &dimid[1]))) ERR(retval);
+//  if ((retval = nc_inq_dimid(ncID, TIME, &dimid[2]))) ERR(retval);
+//
+//  if ((retval = nc_inq_dimlen(ncID, dimid[0], &dimsize[0]))) ERR(retval);
+//  if ((retval = nc_inq_dimlen(ncID, dimid[1], &dimsize[1]))) ERR(retval);
+//  if ((retval = nc_inq_dimlen(ncID, dimid[2], &dimsize[2]))) ERR(retval);
+//  printf("dimension sizes: (%d, %d, %d)\n", (int) dimsize[0], (int) dimsize[1], (int) dimsize[2]);fflush(NULL);
+
   // get varID of vertical velocity
   if ((retval = nc_inq_varid(ncID, ZVEL, &varID))) ERR(retval);
 
   // read slices
   for (nn=nlatmin; nn<nlatmin + ww->nlat; nn++){
+    start[1] = (size_t) (nn - nlatmin);
     for (mm=nlon; mm < nlon + 2 * ndlon; mm++) {
       // read slice
       if (mm < 0) {
@@ -51,7 +67,9 @@ void loadw(dat3d *ww, dat2d *lsmask, int nlatmin, int nlon, int ndlon, int nmont
       } else if (mm > lsmask->nlon) {
         start[2] = (size_t) (mm - lsmask->nlon);
       }
+
       if ((retval = nc_get_vara_double(ncID, varID, start, count, &(ww->data)[nn-nlatmin][mm - nlon][0])))
+
       ERR(retval);
     }
   }
@@ -65,28 +83,31 @@ void advancew(dat3d *ww, dat2d *lsmask, int nlatmin, int nlon, int ndlon, int nm
   // load slice of vertical velocity from data files
   int retval, ncID, varID, nn, mm, nt;
   size_t days[12] = {31, 28 + (size_t) leap, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31};
-  size_t start[3] = {0, 0, 0}, count[3]={days[nmonth] * 24, 1, 1}; // time, lats, lons
+  size_t start[3] = {0, 0, 0}, count[3]={0, 1, 1}; // time, lats, lons
   char filepath[MAXCHARLEN];
 
   if (DBGFLG>2) {printf("  advancew: shifting vertical velocity\n");fflush(NULL);}
   // shift data by one
   for (nn=0; nn < ww->nlat; nn++){
     for (mm=0; mm < 2 * ndlon - 1; mm++){
-      for (nt=0; nt < days[nmonth]*24; nt++){
-        ww->data[nn][mm][nt] = ww->data[nn][mm+1][nt];
+      for (nt=0; nt < ww->nt; nt++){
+        memcpy(&ww->data[nn][mm][nt], &ww->data[nn][mm+1][nt] , sizeof(double));
       }
     }
   }
 
-  if (DBGFLG>2) {printf("  advancew: advance vertical velocity field by on longitude\n");fflush(NULL);}
+  if (DBGFLG>2) {printf("  advancew: advance vertical velocity field by one longitude\n");fflush(NULL);}
   // load one slice of data
   // set file to load from
   if (nmonth==0) {
     sprintf(filepath, AUXPATH, 1);
+    count[0] = days[0] * 24;
   } else if (nmonth==13) {
     sprintf(filepath, AUXPATH, 12);
+    count[0] = days[11] * 24;
   } else {
     sprintf(filepath, OUTPATH, nmonth);
+    count[0] = days[nmonth-1] * 24;
   }
 
   // open file

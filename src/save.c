@@ -149,6 +149,7 @@ void savePoint(double* uu, double* vv, double* mld, double* taux, double* tauy,
 
 
   for (nn=0; nn<14; nn++) {
+    if (DBGFLG>2) {printf("  savePoint: prcessing month %d\n", nn); fflush(NULL);}
     if (DBGFLG>2) {printf("  savePoint: slicing data\n"); fflush(NULL);}
     // set slicing indices according to month
     iterbounds[0] = sum(days, nn) * 24;
@@ -253,10 +254,10 @@ void savelh(double ***lh, int *time, int nxmin, int nxmax, int nymin, int nymax,
   // iterate over months
   for (nmonth=1; nmonth<13; nmonth++) {
     // allocate data according to month
-    lhSlice = dalloc(lhSlice, (size_t) days[nmonth]);
+    lhSlice = dalloc(lhSlice, (size_t) days[nmonth]*24);
 
     // set filepath as above
-    sprintf(filepath, OUTPATH, nmonth+1);
+    sprintf(filepath, OUTPATH, nmonth);
 
     // set hyperslab indicees
     start[0] = (size_t) 0;
@@ -278,10 +279,10 @@ void savelh(double ***lh, int *time, int nxmin, int nxmax, int nymin, int nymax,
             }
           }
           // linearly interpolate
-          lhSlice[nt] = (lh[nint - 1][ny][nx] +
-                     (lh[nint][ny][nx] - lh[nint - 1][ny][nx]) /
-                     (lhTime[nint] - lhTime[nint - 1]) *
-                     (time[nt] - lhTime[nint - 1]));
+          lhSlice[nt] = (lh[nint - 1][ny - nymin][nx - nxmin] +
+                        (lh[nint][ny - nymin][nx - nxmin] - lh[nint - 1][ny - nymin][nx - nxmin]) /
+                        (lhTime[nint] - lhTime[nint - 1]) *
+                        (time[nt] - lhTime[nint - 1]));
         }
 
         // set hyperlsab

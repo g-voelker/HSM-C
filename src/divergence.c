@@ -40,6 +40,7 @@ void divergence(dat2d *lsmask, int nxmin, int nxmax, int nymin, int nymax, int l
   start[0] = start[1] = start[2] = 0;
   count[0] = count[1] = count[2] = 1;
 
+  if (DBGFLG>2) {printf("  divergence: calculate distances in grid\n");fflush(NULL);}
   // calculate distance grid
   for (nn=nymin; nn<(nymax-1); nn++){ // on staggered grid
     dys[nn-nymin] = dsgn(lsmask->lat[nn+1] - lsmask->lat[nn]) * dist(0.0, 0.0, lsmask->lat[nn], lsmask->lat[nn+1]);
@@ -48,10 +49,12 @@ void divergence(dat2d *lsmask, int nxmin, int nxmax, int nymin, int nymax, int l
     dx[nn-nymin] = dsgn(lsmask->lon[1] - lsmask->lon[0]) * dist(lsmask->lon[0], lsmask->lon[1], lsmask->lat[nn], lsmask->lat[nn]);
   }
 
-  // loop over snap shots
+  if (DBGFLG>2) {printf("  divergence: loop over all months and snapshots\n");fflush(NULL);}
+  // loop over snapshots
   for (nmonth=0; nmonth< 14; nmonth++){
     // set count and chunksize in time
     count[0] = chunksize[0] = days[nmonth]*24;
+
 
     // allocate auxiliary arrays
     vc = dalloc(vc, days[nmonth]*24);
@@ -63,13 +66,15 @@ void divergence(dat2d *lsmask, int nxmin, int nxmax, int nymin, int nymax, int l
     ww = dalloc(ww, days[nmonth]*24);
     mld = dalloc(mld, days[nmonth]*24);
 
-    if (nn==0) {
+    // note: the order of computation doesn't matter here
+    if (nmonth==0) {
       sprintf(filepath, AUXPATH, 1);
-    } else if (nn==13) {
+    } else if (nmonth==13) {
       sprintf(filepath, AUXPATH, 12);
     } else {
       sprintf(filepath, OUTPATH, nmonth);
     }
+
     // open netcdf file and read u, v, mld
     if ((retval = nc_open(filepath, NC_WRITE, &ncID))) ERR(retval);
 
@@ -150,4 +155,5 @@ void divergence(dat2d *lsmask, int nxmin, int nxmax, int nymin, int nymax, int l
     free(ww);
     free(mld);
   }
+  if (DBGFLG>2) {printf("  divergence: return to main\n");fflush(NULL);}
 }

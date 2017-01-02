@@ -240,7 +240,7 @@ int main(void) {
     for (mm=NLONMIN; mm<=NLONMAX; mm++){
       if (DBGFLG>1) { printf("    (%d, %d)\n", nn, mm); fflush(NULL);}
       // get horizontal wave lengths
-      getdataHybrid(&lsmask, &lh, &ww, &NN, nn, nlatmin, mm, NLONMIN);
+      getdataHybrid(&lsmask, &lh, &ww, &NN, nn, nlatmin, mm, NLONMIN, leap);
 
       // get energy flux for point
       // hybrid(&lh);

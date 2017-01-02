@@ -150,16 +150,13 @@ void getdata(int nlat, int nlon, int leap,
 
   nt = 0;
   for (nmonth=0; nmonth<14; nmonth++) {
-    if (DBGFLG>2) { printf("  nmonth: %d\n", nmonth); fflush(NULL);}
-
       if (nmonth==0) {
           sprintf(filepath, STRSPATH, YEAR-1, 12);
       } else if (nmonth==13){
           sprintf(filepath, STRSPATH, YEAR+1, 1);
       } else {
-          sprintf(filepath, STRSPATH, YEAR, nmonth + 1);
+          sprintf(filepath, STRSPATH, YEAR, nmonth);
       }
-      if (DBGFLG>2) { printf(filepath); fflush(NULL);}
 
       // open netcdf file
     if ((retval = nc_open(filepath, NC_NOWRITE, &ncID))) ERR(retval);
@@ -352,10 +349,10 @@ void getdataHybrid(dat2d *lsmask, dat1d *lh, dat1d *ww, dat1d *NN, int ny, int n
   int *buoyancyTime, startIndex=0;
   pos[0] = (size_t) (ny - nymin);
   pos[1] = (size_t) (nx - nxmin);
-  start[0] = (size_t) (ny - nymin);
-  start[1] = (size_t) (nx - nxmin);
-  start[2] = 0;
-  count[0] = count[1] = 1;
+  start[1] = (size_t) (ny - nymin);
+  start[2] = (size_t) (nx - nxmin);
+  start[0] = 0;
+  count[1] = count[2] = 1;
 
   // set lh time for interpolation
   buoyancyTime = ialloc(buoyancyTime, 14);
@@ -379,7 +376,8 @@ void getdataHybrid(dat2d *lsmask, dat1d *lh, dat1d *ww, dat1d *NN, int ny, int n
     buoyancyTime[nt] =  (int) mktime(&tcon);
   }
 
-
+  if (DBGFLG>2) { printf("  getdataHybrid: load buoyancy frequency data\n"); fflush(NULL);}
+  printf(".");
   // load N data
   aux = dalloc(aux, 14);
   for (nmonth=0; nmonth<12; nmonth++) {
@@ -402,8 +400,10 @@ void getdataHybrid(dat2d *lsmask, dat1d *lh, dat1d *ww, dat1d *NN, int ny, int n
   aux[0] = aux[12];
   aux[13] = aux[1];
 
+  if (DBGFLG>2) { printf("  getdataHybrid: interpolate buoyancy frequency data\n"); fflush(NULL);}
+  printf(".");
   // interpolate buoyancy frequency in time
-  for (nt=0; nt<(365 + leap)*24; nt++) {
+  for (nt=0; nt<lh->ntime; nt++) {
     // check position relative to monthly values
     for (nint = 1; nint < 14; nint++) {
       if (buoyancyTime[nint] > lh->time[nt]) {
@@ -417,10 +417,12 @@ void getdataHybrid(dat2d *lsmask, dat1d *lh, dat1d *ww, dat1d *NN, int ny, int n
                    (lh->time[nt] - buoyancyTime[nint - 1]));
   }
 
+  if (DBGFLG>2) { printf("  getdataHybrid: load vertical velocities and horizontal length scales\n"); fflush(NULL);}
+  printf(".\n");
   // load vertical velocity and horizontal length scale
   for (nmonth=0; nmonth<12; nmonth++){
     startIndex = sum(days, nmonth);
-    count[2] = days[nmonth]*24;
+    count[0] = days[nmonth]*24;
 
     // set filepath to datafiles written earlier
     sprintf(filepath, OUTPATH, nmonth+1);
