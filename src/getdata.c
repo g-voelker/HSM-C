@@ -174,7 +174,7 @@ void getdata(int nlat, int nlon, int leap,
     }
 
     // get id of x dataset
-    if ((retval = nc_inq_varid(ncID, "p260062", &dataID))) ERR(retval);
+    if ((retval = nc_inq_varid(ncID, "uflx", &dataID))) ERR(retval);
     // get variable at position (nlon, nlat) and write into array
     if ((retval = nc_get_vara_double(ncID, dataID, start, count, &aux[0]))) ERR(retval);
 
@@ -209,7 +209,7 @@ void getdata(int nlat, int nlon, int leap,
     if ((retval = nc_open(filepath, NC_NOWRITE, &ncID))) ERR(retval);
 
     // get id of y dataset
-    if ((retval = nc_inq_varid(ncID, "p260063", &dataID))) ERR(retval);
+    if ((retval = nc_inq_varid(ncID, "vflx", &dataID))) ERR(retval);
     // get variable at position (nlon, nlat) and write into array
     if ((retval = nc_get_vara_double(ncID, dataID, start, count, &aux[0]))) ERR(retval);
     // check how many attributes it has

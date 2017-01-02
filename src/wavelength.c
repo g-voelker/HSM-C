@@ -190,7 +190,7 @@ void autocorr(dat2d *lsmask, dat3d *ww, double ***distances, double **lh,
   free(norm);
 }
 
-void wavelength(dat2d *lsmask, int nxmin, int nxmax, int nymin, int nymax, int leap){
+void wavelength(dat2d *lsmask, int *time, int nxmin, int nxmax, int nymin, int nymax, int leap){
   size_t days[14] = {31, 31, 28 + (size_t) leap, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31, 31};
   dat3d ww;
   size_t ntime;
@@ -254,8 +254,8 @@ void wavelength(dat2d *lsmask, int nxmin, int nxmax, int nymin, int nymax, int l
     dfree3(ww.data, (size_t) nlat, (size_t) nlon);
   }
 
-  // save data to netcdf file
-  //savelh(lh, nxmin, nxmax, nymin, nymax, nmonth, leap);
+  // interpolate lh and save to netcdf file
+  savelh(lh, time, nxmin, nxmax, nymin, nymax, nmonth, leap);
   dfree3(lh, 14, (size_t) nlat);
 
   if (DBGFLG>2) {printf("  wavelength: return to main\n");fflush(NULL);}

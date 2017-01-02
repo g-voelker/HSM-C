@@ -218,7 +218,7 @@ int main(void) {
   divergence(&lsmask, NLONMIN, NLONMAX + 1, nlatmin, nlatmax + 1, leap);
 
   if (DBGFLG>2) {printf("main: get dominant wavelengths\n");fflush(NULL);}
-  wavelength(&lsmask, NLONMIN, NLONMAX + 1, nlatmin, nlatmax + 1, leap);
+  wavelength(&lsmask, time, NLONMIN, NLONMAX + 1, nlatmin, nlatmax + 1, leap);
 
   // set struct for lh time series
   dat1d lh;

@@ -217,20 +217,33 @@ void savePoint(double* uu, double* vv, double* mld, double* taux, double* tauy,
   if (DBGFLG>2) {printf("  savePoint: return to main\n"); fflush(NULL);}
 }
 
-void savelh(double ***lh, int nxmin, int nxmax, int nymin, int nymax, int nmonth, int leap){
+void savelh(double ***lh, int* time, int nxmin, int nxmax, int nymin, int nymax, int nmonth, int leap){
   size_t days[12] = {31, 28 + (size_t) leap, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31};
-  int nx, ny, nt = 0, mon = 0, ncID, retval, varID;
+  int nx, ny, nm, nt, ncID, retval, varID;
   size_t start[3], count[3];
-  time_t aux;
-  struct tm *auxTime;
+  double *lhint;
+  int *timeSlice;
+  struct tm tcon;
   double *lhSlice;
   char filepath[MAXCHARLEN];
 
-  if (DBGFLG>2) {printf("  savePoint: set slicing indicees\n"); fflush(NULL);}
+  // set time constructor
+  tcon.tm_year = YEAR - 1901;
+  tcon.tm_mon = 11;
+  tcon.tm_mday = 1;
+  tcon.tm_hour = 1;
+  tcon.tm_min = 0;
+  tcon.tm_sec = 0;
+  // tcon.tm_gmtoff = 0;
+  tcon.tm_isdst = 0;
 
-  for (nmonth=0; nmonth<12; nmonth++) {
+
+  if (DBGFLG>2) {printf("  savelh: save wavelength to data file\n"); fflush(NULL);}
+
+  for (nmonth=1; nmonth<13; nmonth++) {
     // slice data according to month
     lhSlice = dalloc(lhSlice, (size_t) days[nmonth]);
+    timeSlice = islice1(time, timeSlice, sum(days, nmonth-1) * 24, sum(days, nmonth) * 24);
 
     // set filepath as above
     sprintf(filepath, OUTPATH, nmonth+1);
@@ -243,10 +256,13 @@ void savelh(double ***lh, int nxmin, int nxmax, int nymin, int nymax, int nmonth
     if ((retval = nc_open(filepath, NC_WRITE, &ncID))) ERR(retval);
     if ((retval = nc_inq_varid(ncID, LH, &varID))) ERR(retval);
 
-
     // start iteration here
     for (nx=nxmin; nx<nxmax; nx++) {
       for (ny=nymin; ny<nymax; ny++) {
+        // interpolate in time
+
+
+        // set hyperlsab
         start[1] = (size_t) (ny - nymin);
         count[1] = 1;
         start[2] = (size_t) (nx - nxmin);
@@ -262,4 +278,6 @@ void savelh(double ***lh, int nxmin, int nxmax, int nymin, int nymax, int nmonth
 
     free(lhSlice);
   }
+
+  if (DBGFLG>2) {printf("  savelh: done.\n"); fflush(NULL);}
 }
