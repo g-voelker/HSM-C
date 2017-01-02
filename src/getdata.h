@@ -10,4 +10,4 @@ extern void getdata(int nlat, int nlon, int leap,
 
 extern dat2d_2 initdamping(dat2d *lsmask);
 
-extern void getlh(dat2d *lsmask, dat1d *lh, int nn, int mm);
+extern void getdataHybrid(dat2d *lsmask, dat1d *lh, dat1d *ww, dat1d *NN, int ny, int nymin, int nx, int nxmin);

@@ -220,24 +220,30 @@ int main(void) {
   if (DBGFLG>2) {printf("main: get dominant wavelengths\n");fflush(NULL);}
   wavelength(&lsmask, time, NLONMIN, NLONMAX + 1, nlatmin, nlatmax + 1, leap);
 
-  // set struct for lh time series
+  // set struct for data time series
   dat1d lh;
+  dat1d ww;
+  dat1d NN;
   lh.ntime = (365+leap)*24;
+  NN.ntime = ww.ntime = lh.ntime;
   lh.time = dalloc(lh.time, (size_t) lh.ntime);
   for (nn=0; nn < lh.ntime; nn++) lh.time[nn] = (double) time[nn + 31*24];
+  NN.time = lh.time;
 
-  exit(EXIT_SUCCESS);
+  lh.data = dalloc(lh.data, lh.ntime);
+  ww.data = dalloc(lh.data, lh.ntime);
+  NN.data = dalloc(lh.data, lh.ntime);
 
   if (DBGFLG>1) {printf("main: begin loop over points\n");fflush(NULL);}
   // calculate hybrid model on all points
   for (nn=nlatmin; nn<=nlatmax; nn++){
     for (mm=NLONMIN; mm<=NLONMAX; mm++){
       if (DBGFLG>1) { printf("    (%d, %d)\n", nn, mm); fflush(NULL);}
-      // calculate horizontal wave lengths
-      getlh(&lsmask, &lh, nn, mm);
+      // get horizontal wave lengths
+      getdataHybrid(&lsmask, &lh, &ww, &NN, nn, nlatmin, mm, NLONMIN);
 
       // get energy flux for point
-
+      // hybrid(&lh);
       // save data to nc file
 
     }

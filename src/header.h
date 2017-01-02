@@ -43,8 +43,8 @@
 #define LONGNAME "long_name"
 
 #define TIME "time"
-#define LATS "latitude"
-#define LONS "longitude"
+#define LATS "lat"
+#define LONS "lon"
 #define DAMP "r_avg"
 #define DAMPNA "r_NA"
 #define XVEL "u"
@@ -65,6 +65,7 @@
 #define EOUT_LONG "energy flux due to radiated IWs"
 #define LH "length_scale"
 #define LH_LONG "horizontal length scale from auto-correlation"
+#define BUOYANCY "BUOYANCY"
 
 #define DEGREES_NORTH "degrees_north"
 #define DEGREES_EAST "degrees_east"

@@ -217,33 +217,43 @@ void savePoint(double* uu, double* vv, double* mld, double* taux, double* tauy,
   if (DBGFLG>2) {printf("  savePoint: return to main\n"); fflush(NULL);}
 }
 
-void savelh(double ***lh, int* time, int nxmin, int nxmax, int nymin, int nymax, int nmonth, int leap){
+void savelh(double ***lh, int *time, int nxmin, int nxmax, int nymin, int nymax, int nmonth, int leap){
   size_t days[12] = {31, 28 + (size_t) leap, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31};
-  int nx, ny, nm, nt, ncID, retval, varID;
+  int nx, ny, nt, nint, ncID, retval, varID;
   size_t start[3], count[3];
-  double *lhint;
-  int *timeSlice;
+  int *lhTime;
   struct tm tcon;
   double *lhSlice;
   char filepath[MAXCHARLEN];
 
-  // set time constructor
-  tcon.tm_year = YEAR - 1901;
-  tcon.tm_mon = 11;
-  tcon.tm_mday = 1;
-  tcon.tm_hour = 1;
-  tcon.tm_min = 0;
-  tcon.tm_sec = 0;
-  // tcon.tm_gmtoff = 0;
-  tcon.tm_isdst = 0;
+  // set lh time for interpolation
+  lhTime = ialloc(lhTime, 14);
+  for (nt=0; nt<14; nt++){
+    if (nt==0){
+      tcon.tm_year = YEAR - 1901;
+      tcon.tm_mon = 11;
+    } else if (nt==13) {
+      tcon.tm_year = YEAR - 1899;
+      tcon.tm_mon = 0;
+    } else {
+      tcon.tm_year = YEAR - 1900;
+      tcon.tm_mon = nt-1;
+    }
+    tcon.tm_mday = 15;
+    tcon.tm_hour = 1;
+    tcon.tm_min = 0;
+    tcon.tm_sec = 0;
+    // tcon.tm_gmtoff = 0;
+    tcon.tm_isdst = 0;
+    lhTime[nt] =  (int) mktime(&tcon);
+  }
 
+  if (DBGFLG>2) {printf("  savelh: interpolate and save wavelength to data file\n"); fflush(NULL);}
 
-  if (DBGFLG>2) {printf("  savelh: save wavelength to data file\n"); fflush(NULL);}
-
+  // iterate over months
   for (nmonth=1; nmonth<13; nmonth++) {
-    // slice data according to month
+    // allocate data according to month
     lhSlice = dalloc(lhSlice, (size_t) days[nmonth]);
-    timeSlice = islice1(time, timeSlice, sum(days, nmonth-1) * 24, sum(days, nmonth) * 24);
 
     // set filepath as above
     sprintf(filepath, OUTPATH, nmonth+1);
@@ -260,7 +270,19 @@ void savelh(double ***lh, int* time, int nxmin, int nxmax, int nymin, int nymax,
     for (nx=nxmin; nx<nxmax; nx++) {
       for (ny=nymin; ny<nymax; ny++) {
         // interpolate in time
-
+        for (nt=0; nt<days[nmonth]*24; nt++) {
+          // check position relative to monthly values
+          for (nint = 1; nint < 14; nint++) {
+            if (lhTime[nint] > time[nt]) {
+              break;
+            }
+          }
+          // linearly interpolate
+          lhSlice[nt] = (lh[nint - 1][ny][nx] +
+                     (lh[nint][ny][nx] - lh[nint - 1][ny][nx]) /
+                     (lhTime[nint] - lhTime[nint - 1]) *
+                     (time[nt] - lhTime[nint - 1]));
+        }
 
         // set hyperlsab
         start[1] = (size_t) (ny - nymin);
@@ -278,6 +300,6 @@ void savelh(double ***lh, int* time, int nxmin, int nxmax, int nymin, int nymax,
 
     free(lhSlice);
   }
-
+  free(lhTime);
   if (DBGFLG>2) {printf("  savelh: done.\n"); fflush(NULL);}
 }

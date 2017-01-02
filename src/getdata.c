@@ -4,9 +4,11 @@
 #include <stdio.h>
 #include <string.h>
 #include "../lib/dalloc.h"
+#include "../lib/ialloc.h"
 #include "../lib/structs.h"
 #include "input.h"
 #include "header.h"
+#include "save.h"
 // #include <grib_api.h>
 // #include <unistd.h> (sleep)
 
@@ -334,17 +336,110 @@ dat2d_2 initdamping(dat2d *lsmask){
   return(data);
 }
 
-void getlh(dat2d *lsmask, dat1d *lh, int nn, int mm){
-  // get indicees of points to load
+void getdataHybrid(dat2d *lsmask, dat1d *lh, dat1d *ww, dat1d *NN, int ny, int nymin, int nx, int nxmin, int leap){
+  // indices
+  size_t days[12] = {31, 28 + (size_t) leap, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31};
+  int nmonth, nt, nint;
+  // nc variables
+  int retval, ncID, varID[2];
+  size_t start[3], count[3], pos[2];
+  char filepath[MAXCHARLEN];
+  // time variables
+  struct tm tcon;
 
-  // load matrix
+  // initialize auxiliary variables
+  double *aux;
+  int *buoyancyTime, startIndex=0;
+  pos[0] = (size_t) (ny - nymin);
+  pos[1] = (size_t) (nx - nxmin);
+  start[0] = (size_t) (ny - nymin);
+  start[1] = (size_t) (nx - nxmin);
+  start[2] = 0;
+  count[0] = count[1] = 1;
 
-  // analyse time step by time step
+  // set lh time for interpolation
+  buoyancyTime = ialloc(buoyancyTime, 14);
+  for (nt=0; nt<14; nt++){
+    if (nt==0){
+      tcon.tm_year = YEAR - 1901;
+      tcon.tm_mon = 11;
+    } else if (nt==13) {
+      tcon.tm_year = YEAR - 1899;
+      tcon.tm_mon = 0;
+    } else {
+      tcon.tm_year = YEAR - 1900;
+      tcon.tm_mon = nt-1;
+    }
+    tcon.tm_mday = 15;
+    tcon.tm_hour = 1;
+    tcon.tm_min = 0;
+    tcon.tm_sec = 0;
+    // tcon.tm_gmtoff = 0;
+    tcon.tm_isdst = 0;
+    buoyancyTime[nt] =  (int) mktime(&tcon);
+  }
 
-  // average time bins together
 
-  // interpolate reduced time series
+  // load N data
+  aux = dalloc(aux, 14);
+  for (nmonth=0; nmonth<12; nmonth++) {
+    // set filepath
+    sprintf(filepath, NPATH, nmonth+1);
 
-  // set values in struct
+    // open file
+    if ((retval = nc_open(filepath, NC_NOWRITE, &ncID))) ERR(retval);
 
+    // get varID
+    if ((retval = nc_inq_varid(ncID, BUOYANCY, &varID[0]))) ERR(retval);
+
+    // get variable
+    if ((retval = nc_get_var1_double(ncID, varID[0], pos, &aux[nmonth+1]))) ERR(retval);
+
+    // close file
+    if ((retval = nc_close(ncID))) ERR(retval);
+  }
+  // set previous December and following January
+  aux[0] = aux[12];
+  aux[13] = aux[1];
+
+  // interpolate buoyancy frequency in time
+  for (nt=0; nt<(365 + leap)*24; nt++) {
+    // check position relative to monthly values
+    for (nint = 1; nint < 14; nint++) {
+      if (buoyancyTime[nint] > lh->time[nt]) {
+        break;
+      }
+    }
+    // linearly interpolate and set to data array
+    NN->data[nt] = (aux[nint - 1] +
+                   (aux[nint] - aux[nint - 1]) /
+                   (buoyancyTime[nint] - buoyancyTime[nint - 1]) *
+                   (lh->time[nt] - buoyancyTime[nint - 1]));
+  }
+
+  // load vertical velocity and horizontal length scale
+  for (nmonth=0; nmonth<12; nmonth++){
+    startIndex = sum(days, nmonth);
+    count[2] = days[nmonth]*24;
+
+    // set filepath to datafiles written earlier
+    sprintf(filepath, OUTPATH, nmonth+1);
+
+    // open file
+    if ((retval = nc_open(filepath, NC_NOWRITE, &ncID))) ERR(retval);
+
+    // get varID
+    if ((retval = nc_inq_varid(ncID, ZVEL, &varID[0]))) ERR(retval);
+    if ((retval = nc_inq_varid(ncID, LH, &varID[1]))) ERR(retval);
+
+    // get variable
+    if ((retval = nc_get_vara_double(ncID, varID[0], start, count, &ww->data[startIndex]))) ERR(retval);
+    if ((retval = nc_get_vara_double(ncID, varID[1], start, count, &lh->data[startIndex]))) ERR(retval);
+
+    // close file
+    if ((retval = nc_close(ncID))) ERR(retval);
+  }
+
+  free(aux);
+  free(buoyancyTime);
 }
