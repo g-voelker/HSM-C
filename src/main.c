@@ -17,6 +17,7 @@
 #include "input.h"
 #include "divergence.h"
 #include "wavelength.h"
+#include "hybrid.h"
 
 /*
 void slab(int year, int nlat, int nlon) {
@@ -224,28 +225,34 @@ int main(void) {
   dat1d lh;
   dat1d ww;
   dat1d NN;
+  dat1d Eout;
   lh.ntime = (365+leap)*24;
-  NN.ntime = ww.ntime = lh.ntime;
+  NN.ntime = ww.ntime = Eout.ntime = lh.ntime;
   lh.time = dalloc(lh.time, (size_t) lh.ntime);
   for (nn=0; nn < lh.ntime; nn++) lh.time[nn] = (double) time[nn + 31*24];
-  NN.time = lh.time;
+  NN.time = ww.time = Eout.time = lh.time;
 
-  lh.data = dalloc(lh.data, lh.ntime);
-  ww.data = dalloc(lh.data, lh.ntime);
-  NN.data = dalloc(lh.data, lh.ntime);
+  lh.data = dalloc(lh.data, (size_t) lh.ntime);
+  ww.data = dalloc(lh.data, (size_t) lh.ntime);
+  NN.data = dalloc(lh.data, (size_t) lh.ntime);
+  Eout.data = dalloc(lh.data, (size_t) lh.ntime);
 
   if (DBGFLG>1) {printf("main: begin loop over points\n");fflush(NULL);}
   // calculate hybrid model on all points
   for (nn=nlatmin; nn<=nlatmax; nn++){
     for (mm=NLONMIN; mm<=NLONMAX; mm++){
       if (DBGFLG>1) { printf("    (%d, %d)\n", nn, mm); fflush(NULL);}
-      // get horizontal wave lengths
+      // get data
       getdataHybrid(&lsmask, &lh, &ww, &NN, nn, nlatmin, mm, NLONMIN, leap);
 
-      // get energy flux for point
-      // hybrid(&lh);
-      // save data to nc file
+      // set Coriolis frequency
+      f0 = coriolis(lsmask.lat[nn]);
 
+      // get energy flux for point
+      hybrid(&lsmask, &lh, &ww, &NN, &Eout, f0, AUX, aux, fft, ifft, nn, mm, leap);
+
+      // save data to nc file
+      savePointHybrid(&Eout, nn, nlatmin, mm, NLONMIN, leap);
     }
   }
 
@@ -260,7 +267,11 @@ int main(void) {
   dfree2(lsmask.data, (size_t) lsmask.nlon);
   free(damp.y1); // note tha damp.xx is free'd at lsmask.lat
   free(damp.y2);
-  free(lh.time);
+  free(lh.data);
+  free(lh.time); // frees time axes of all structs
+  free(NN.data);
+  free(ww.data);
+  free(Eout.data);
 
   return(EXIT_SUCCESS);
 }

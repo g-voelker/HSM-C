@@ -46,7 +46,7 @@ set(SOURCE_FILES
         src/divergence.h
         src/wavelength.c
         src/wavelength.h
-        )
+        src/hybrid.c src/hybrid.h)
 
 add_executable(EIS ${SOURCE_FILES})
 

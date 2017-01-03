@@ -10,3 +10,5 @@ extern void savePoint(double* uu, double* vv, double* mld,  double* taux, double
                       int* time, int nxmin, int nx, int nymin, int ny, int leap);
 
 extern void savelh(double ***lh, int *time, int nxmin, int nxmax, int nymin, int nymax, int nmonth, int leap);
+
+extern void savePointHybrid(dat1d *Eout, int nn, int nlatmin, int mm, int NLONMIN, int leap);

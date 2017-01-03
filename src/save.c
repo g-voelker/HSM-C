@@ -304,3 +304,7 @@ void savelh(double ***lh, int *time, int nxmin, int nxmax, int nymin, int nymax,
   free(lhTime);
   if (DBGFLG>2) {printf("  savelh: done.\n"); fflush(NULL);}
 }
+
+void savePointHybrid(dat1d *Eout, int nn, int nlatmin, int mm, int NLONMIN, int leap){
+
+}
