@@ -379,9 +379,12 @@ void getdataHybrid(dat2d *lsmask, dat1d *lh, dat1d *ww, dat1d *NN, int ny, int n
   if (DBGFLG>2) { printf("  getdataHybrid: load buoyancy frequency data\n"); fflush(NULL);}
   // load N data
   aux = dalloc(aux, 14);
-  for (nmonth=0; nmonth<12; nmonth++) {
+  for (nmonth=1; nmonth<13; nmonth++) {
+    // init aux at nmonth
+    aux[nmonth]=0.0;
+
     // set filepath
-    sprintf(filepath, NPATH, nmonth+1);
+    sprintf(filepath, NPATH, nmonth);
 
     // open file
     if ((retval = nc_open(filepath, NC_NOWRITE, &ncID))) ERR(retval);
@@ -390,7 +393,7 @@ void getdataHybrid(dat2d *lsmask, dat1d *lh, dat1d *ww, dat1d *NN, int ny, int n
     if ((retval = nc_inq_varid(ncID, BUOYANCY, &varID[0]))) ERR(retval);
 
     // get variable
-    if ((retval = nc_get_var1_double(ncID, varID[0], pos, &aux[nmonth+1]))) ERR(retval);
+    if ((retval = nc_get_var1_double(ncID, varID[0], pos, &aux[nmonth]))) ERR(retval);
 
     // close file
     if ((retval = nc_close(ncID))) ERR(retval);

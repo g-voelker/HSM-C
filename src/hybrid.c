@@ -43,6 +43,8 @@ void hybrid(dat1d *lh, dat1d *ww, dat1d *NN, dat1d *Eout, double *freqs, double 
     aux[nt][0] = AUX[nt][0] = AUX[nt][1] = 0.0;
   }
 
+
+
   // transform in time
   fftw_execute(fft);
 

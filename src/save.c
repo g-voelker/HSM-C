@@ -218,9 +218,9 @@ void savePoint(double* uu, double* vv, double* mld, double* taux, double* tauy,
   if (DBGFLG>2) {printf("  savePoint: return to main\n"); fflush(NULL);}
 }
 
-void savelh(double ***lh, int *time, int nxmin, int nxmax, int nymin, int nymax, int nmonth, int leap){
+void savelh(double ***lh, int *time, int nxmin, int nxmax, int nymin, int nymax, int leap){
   size_t days[12] = {31, 28 + (size_t) leap, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31};
-  int nx, ny, nt, nint, ncID, retval, varID;
+  int nx, ny, nt, nint, ncID, retval, varID, nmonth = 0;
   size_t start[3], count[3];
   int *lhTime;
   struct tm tcon;
@@ -252,12 +252,12 @@ void savelh(double ***lh, int *time, int nxmin, int nxmax, int nymin, int nymax,
   if (DBGFLG>2) {printf("  savelh: interpolate and save wavelength to data file\n"); fflush(NULL);}
 
   // iterate over months
-  for (nmonth=1; nmonth<13; nmonth++) {
+  for (nmonth=0; nmonth<12; nmonth++) {
     // allocate data according to month
     lhSlice = dalloc(lhSlice, (size_t) days[nmonth]*24);
 
     // set filepath as above
-    sprintf(filepath, OUTPATH, nmonth);
+    sprintf(filepath, OUTPATH, nmonth+1);
 
     // set hyperslab indicees
     start[0] = (size_t) 0;

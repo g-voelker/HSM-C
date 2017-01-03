@@ -6,7 +6,7 @@
 
 // bounding box
 #define LATMIN 20
-#define LATMAX 25
+#define LATMAX 22
 #define LONMIN 320
 #define LONMAX 325
 
@@ -21,8 +21,8 @@
 // months are replaced with %02d
 
 #define MLDPATH "/run/media/georg/4TB-ntfs/Data/MIMOC/MIMOC_ML_v2.2_CT_SA_MLP_month%02d_regrid.nc"
+#define NPATH "/run/media/georg/4TB-ntfs/Data/MIMOC/MIMOC_ML_v2.2_N_month%02d_regrid.nc"
 #define STRSPATH "/run/media/georg/TRANSCEND/EIS2/NCEP-CFSR/stress/p2/wndstrs.gdas.%d%02d.fast.nc"
-#define NPATH "/run/media/georg/4TB-ntfs/Data/MIMOC/MIMOC_ML_v2.2_N_month%02d.nc"
 #define OUTPATH "/run/media/georg/TRANSCEND/EIS2/results/eis3_test/test_lh_%02d.nc"
 #define AUXPATH "/run/media/georg/TRANSCEND/EIS2/results/eis3_test/test_lh_aux_%02d.nc"
 //#define MLDPATH "/run/media/georg/TRANSCEND/EIS2/MIMOC/MIMOC_ML_v2.2_CT_SA_MLP_month%02d_regrid.nc"

@@ -151,8 +151,8 @@ int main(void) {
   // set frequencies
   aux = (fftw_complex*) fftw_malloc(sizeof(fftw_complex) * DFFT_LEN);
   AUX = (fftw_complex*) fftw_malloc(sizeof(fftw_complex) * DFFT_LEN);
-  haux = (fftw_complex*) fftw_malloc(sizeof(fftw_complex) * DFFT_LEN);
-  HAUX = (fftw_complex*) fftw_malloc(sizeof(fftw_complex) * DFFT_LEN);
+  haux = (fftw_complex*) fftw_malloc(sizeof(fftw_complex) * (365+leap)*24);
+  HAUX = (fftw_complex*) fftw_malloc(sizeof(fftw_complex) * (365+leap)*24);
   hfreqs = dalloc(hfreqs, (size_t) ((365 + leap) * 24));
 
   for (nn=0; nn<DFFT_LEN/2; nn++) {
