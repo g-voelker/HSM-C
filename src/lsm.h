@@ -1,1 +1,1 @@
-extern dat2d lsm(char *filename);
+extern dat2d lsm();

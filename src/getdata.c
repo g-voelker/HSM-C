@@ -107,7 +107,7 @@ void getdata(int nlat, int nlon, int leap,
   tcon.tm_mday = 15;
   itime[14] = mktime(&tcon);
 
-  tcon.tm_mon = 0;
+  tcon.tm_mon = 1;
   itime[15] = mktime(&tcon);
 
   if (DBGFLG>2) { printf("  getdata: load MLD\n"); fflush(NULL);}
@@ -377,7 +377,6 @@ void getdataHybrid(dat2d *lsmask, dat1d *lh, dat1d *ww, dat1d *NN, int ny, int n
   }
 
   if (DBGFLG>2) { printf("  getdataHybrid: load buoyancy frequency data\n"); fflush(NULL);}
-  printf(".");
   // load N data
   aux = dalloc(aux, 14);
   for (nmonth=0; nmonth<12; nmonth++) {
@@ -401,7 +400,6 @@ void getdataHybrid(dat2d *lsmask, dat1d *lh, dat1d *ww, dat1d *NN, int ny, int n
   aux[13] = aux[1];
 
   if (DBGFLG>2) { printf("  getdataHybrid: interpolate buoyancy frequency data\n"); fflush(NULL);}
-  printf(".");
   // interpolate buoyancy frequency in time
   for (nt=0; nt<lh->ntime; nt++) {
     // check position relative to monthly values
@@ -418,7 +416,6 @@ void getdataHybrid(dat2d *lsmask, dat1d *lh, dat1d *ww, dat1d *NN, int ny, int n
   }
 
   if (DBGFLG>2) { printf("  getdataHybrid: load vertical velocities and horizontal length scales\n"); fflush(NULL);}
-  printf(".\n");
   // load vertical velocity and horizontal length scale
   for (nmonth=0; nmonth<12; nmonth++){
     startIndex = sum(days, nmonth);

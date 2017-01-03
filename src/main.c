@@ -48,9 +48,6 @@ int main(void) {
   // constants
   double rho0 = RHO, r0, f0;
 
-  // land sea mask related variables
-  char lsmfile[] = LSMPATH;
-
   // subsetting related variables
   int NLATMIN, NLATMAX, nlatmin, nlatmax, NLONMIN, NLONMAX;
   double minimum, maximum;
@@ -60,9 +57,9 @@ int main(void) {
   struct tm tcon;
 
   // FFT related variables
-  double freqs[DFFT_LEN];
-  fftw_complex *aux, *AUX;
-  fftw_plan fft, ifft;
+  double freqs[DFFT_LEN], *hfreqs;
+  fftw_complex *aux, *AUX, *haux, *HAUX;
+  fftw_plan fft, ifft, hfft, hifft;
 
   if (DBGFLG > 2) {printf("main: set time axis\n");fflush(NULL);}
 
@@ -105,8 +102,8 @@ int main(void) {
 
   }
 
-  if (DBGFLG > 1) {printf("main: set land sea mask\n");fflush(NULL);}
-  dat2d lsmask = lsm(lsmfile);
+  if (DBGFLG > 0) {printf("main: set land sea mask\n");fflush(NULL);}
+  dat2d lsmask = lsm();
 
   if (DBGFLG>1) {printf("main: get subset\n"); fflush(NULL);}
   NLATMIN = NLATMAX = NLONMIN = NLONMAX = 0;
@@ -154,6 +151,9 @@ int main(void) {
   // set frequencies
   aux = (fftw_complex*) fftw_malloc(sizeof(fftw_complex) * DFFT_LEN);
   AUX = (fftw_complex*) fftw_malloc(sizeof(fftw_complex) * DFFT_LEN);
+  haux = (fftw_complex*) fftw_malloc(sizeof(fftw_complex) * DFFT_LEN);
+  HAUX = (fftw_complex*) fftw_malloc(sizeof(fftw_complex) * DFFT_LEN);
+  hfreqs = dalloc(hfreqs, (size_t) ((365 + leap) * 24));
 
   for (nn=0; nn<DFFT_LEN/2; nn++) {
     freqs[nn] = 2 * PI / 3600.0 * nn / DFFT_LEN;
@@ -162,9 +162,19 @@ int main(void) {
     freqs[nn] = 2 * PI / 3600.0 * (nn - DFFT_LEN) / DFFT_LEN;
   }
 
+  for (nn=0; nn<((365 + leap) * 24) / 2; nn++) {
+    hfreqs[nn] = 2 * PI / 3600.0 * nn / ((365 + leap) * 24);
+  }
+  for (nn=((365 + leap) * 24) / 2; nn<((365 + leap) * 24); nn++) {
+    hfreqs[nn] = 2 * PI / 3600.0 * (nn - ((365 + leap) * 24)) / ((365 + leap) * 24);
+  }
+
   // define transforms
   fft = fftw_plan_dft_1d(DFFT_LEN, aux, AUX, FFTW_FORWARD, FFTW_ESTIMATE);
   ifft = fftw_plan_dft_1d(DFFT_LEN, AUX, aux, FFTW_BACKWARD, FFTW_ESTIMATE);
+
+  hfft = fftw_plan_dft_1d(((365 + leap) * 24), haux, HAUX, FFTW_FORWARD, FFTW_ESTIMATE);
+  hifft = fftw_plan_dft_1d(((365 + leap) * 24), HAUX, haux, FFTW_BACKWARD, FFTW_ESTIMATE);
 
   if (DBGFLG>2) {printf("main: init data files\n"); fflush(NULL);}
 
@@ -172,16 +182,16 @@ int main(void) {
   initnc(&lsmask, time, NLONMIN, NLONMAX + 1, nlatmin, nlatmax + 1, leap);
   dat2d_2 damp = initdamping(&lsmask);
 
-  if (DBGFLG>1) {
+  if (DBGFLG>0) {
     printf("main: subset boundaries are set by:\n");
     printf("     (latmin, latmax, lonmin, lonmax):\n");
     printf("       %.2f; %.2f; %.2f; %.2f;\n",
            lsmask.lat[NLATMIN], lsmask.lat[NLATMAX], lsmask.lon[NLONMIN], lsmask.lon[NLONMAX]);
     printf("main: running slab model\n");
-    printf("main: begin loop over points\n");
-    fflush(NULL);
   }
-
+  if (DBGFLG>1) {
+    printf("main: begin loop over points\n");
+  }
   fflush(NULL);
 
   // calculate slab model on all points
@@ -212,7 +222,7 @@ int main(void) {
     }
   }
 
-  if (DBGFLG>1) {printf("main: proceed with hybrid extension\n"); fflush(NULL);}
+  if (DBGFLG>0) {printf("main: proceed with hybrid extension\n"); fflush(NULL);}
 
   if (DBGFLG>2) {printf("main: get divergence of velocity field\n");fflush(NULL);}
   // get mid-point divergences
@@ -241,18 +251,27 @@ int main(void) {
   // calculate hybrid model on all points
   for (nn=nlatmin; nn<=nlatmax; nn++){
     for (mm=NLONMIN; mm<=NLONMAX; mm++){
-      if (DBGFLG>1) { printf("    (%d, %d)\n", nn, mm); fflush(NULL);}
-      // get data
-      getdataHybrid(&lsmask, &lh, &ww, &NN, nn, nlatmin, mm, NLONMIN, leap);
 
-      // set Coriolis frequency
-      f0 = coriolis(lsmask.lat[nn]);
+      if (lsmask.data[nn-1][mm] +
+          lsmask.data[nn+1][mm] +
+          lsmask.data[nn][mm-1] +
+          lsmask.data[nn][mm+1] +
+          lsmask.data[nn][mm] == 0.0) {
 
-      // get energy flux for point
-      hybrid(&lsmask, &lh, &ww, &NN, &Eout, f0, AUX, aux, fft, ifft, nn, mm, leap);
+        if (DBGFLG>1) { printf("    (%d, %d)\n", nn, mm); fflush(NULL);}
 
-      // save data to nc file
-      savePointHybrid(&Eout, nn, nlatmin, mm, NLONMIN, leap);
+        // get data
+        getdataHybrid(&lsmask, &lh, &ww, &NN, nn, nlatmin, mm, NLONMIN, leap);
+
+        // set Coriolis frequency
+        f0 = coriolis(lsmask.lat[nn]);
+
+        // get energy flux for point
+        hybrid(&lh, &ww, &NN, &Eout, hfreqs, f0, HAUX, haux, hfft, hifft, leap);
+
+        // save data to nc file
+        savePointHybrid(&Eout, nn, nlatmin, mm, NLONMIN, leap);
+      }
     }
   }
 
@@ -264,11 +283,11 @@ int main(void) {
   fftw_free(AUX);
   free(lsmask.lat);
   free(lsmask.lon);
-  dfree2(lsmask.data, (size_t) lsmask.nlon);
+  dfree2(lsmask.data, (size_t) lsmask.nlat);
   free(damp.y1); // note tha damp.xx is free'd at lsmask.lat
   free(damp.y2);
   free(lh.data);
-  free(lh.time); // frees time axes of all structs
+  free(lh.time); // frees time axes of all data structs
   free(NN.data);
   free(ww.data);
   free(Eout.data);

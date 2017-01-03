@@ -149,7 +149,7 @@ void savePoint(double* uu, double* vv, double* mld, double* taux, double* tauy,
 
 
   for (nn=0; nn<14; nn++) {
-    if (DBGFLG>2) {printf("  savePoint: prcessing month %d\n", nn); fflush(NULL);}
+    if (DBGFLG>2) {printf("  savePoint: processing month %d\n", nn); fflush(NULL);}
     if (DBGFLG>2) {printf("  savePoint: slicing data\n"); fflush(NULL);}
     // set slicing indices according to month
     iterbounds[0] = sum(days, nn) * 24;
@@ -305,6 +305,49 @@ void savelh(double ***lh, int *time, int nxmin, int nxmax, int nymin, int nymax,
   if (DBGFLG>2) {printf("  savelh: done.\n"); fflush(NULL);}
 }
 
-void savePointHybrid(dat1d *Eout, int nn, int nlatmin, int mm, int NLONMIN, int leap){
+void savePointHybrid(dat1d *Eout, int ny, int nymin, int nx, int nxmin, int leap){
+  size_t days[14] = {31, 28 + (size_t) leap, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31};
+  int nmonth = 0, ncID, retval, varID;
+  int iterbounds[2];
+  size_t start[3], count[3];
+  double *EoutSlice;
+  char filepath[MAXCHARLEN];
+
+  for (nmonth=0; nmonth<12; nmonth++) {
+    if (DBGFLG>2) {printf("  savePoint: processing month %d\n", nmonth + 1); fflush(NULL);}
+    if (DBGFLG>2) {printf("  savePoint: slicing data\n"); fflush(NULL);}
+    // set slicing indices according to month
+    iterbounds[0] = sum(days, nmonth) * 24;
+    iterbounds[1] = sum(days, nmonth+1) * 24;
+
+    // slice data according to month
+    EoutSlice = dalloc(EoutSlice, (size_t) (iterbounds[1] - iterbounds[0]));
+    EoutSlice = dslice1(Eout->data, EoutSlice, iterbounds[0], iterbounds[1]);
+
+    // set filepath as above
+    sprintf(filepath, OUTPATH, nmonth + 1);
+
+    // set hyperslab indicees
+    start[0] = (size_t) 0;
+    count[0] = (size_t) (iterbounds[1] - iterbounds[0]);
+    start[1] = (size_t) (ny-nymin);
+    count[1] =  1;
+    start[2] = (size_t) (nx-nxmin);
+    count[2] =  1;
+
+    if (DBGFLG>2) {printf("  savePoint: saving data to nc file\n"); fflush(NULL);}
+    // open nc file
+    if ((retval = nc_open(filepath, NC_WRITE, &ncID))) ERR(retval);
+
+    // get variable ID and write hyperslab into file
+    if ((retval = nc_inq_varid(ncID, EOUT, &varID))) ERR(retval);
+    if ((retval = nc_put_vara_double(ncID, varID, start, count, &EoutSlice[0]))) ERR(retval);
+
+    // close nc file
+    if ((retval = nc_close(ncID))) ERR(retval);
+
+    free(EoutSlice);
+  }
+  if (DBGFLG>2) {printf("  savePoint: return to main\n"); fflush(NULL);}
 
 }

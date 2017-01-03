@@ -11,7 +11,9 @@
 #define LONMAX 325
 
 // flags
-#define DBGFLG 3
+// debug flag
+#define DBGFLG 1
+// stress correction flag
 #define STRSCOR 1
 
 // paths to dynamic data;
@@ -29,3 +31,4 @@
 //#define NPATH "/cygdrive/e/Data/MIMOC/MIMOC_ML_v2.2_N2_month%02d.nc"
 //#define OUTPATH "/cygdrive/e/Data/results/eis3/test_lh_%02d.nc"
 //#define AUXPATH "/cygdrive/e/Data/results/eis3/test_lh_aux_%02d.nc"
+
