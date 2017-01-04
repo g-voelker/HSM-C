@@ -21,12 +21,12 @@ void hybrid(dat1d *lh, dat1d *ww, dat1d *NN, dat1d *Eout, double *freqs, double 
 
   // get average stratification for window
   avgN = 0.0;
-  for (nt=0; nt<(365 + leap)*24; nt++) avgN += NN->data[nt] / (365 + leap)*24;
+  for (nt=0; nt<(365 + leap)*24; nt++) avgN += NN->data[nt] / (365 + leap) / 24;
 
   // set up window
-  window = dalloc(window, (size_t) (365 + leap) * 24);
-  for (nt=0; nt<(365 + leap) * 24; nt++){
-    if ((freqs[nt]<=f0)|(freqs[nt]>=NN->data[nt])) {
+  window = dalloc(window, (size_t)  ((365 + leap) * 24));
+  for (nt=0; nt< ((365 + leap) * 24); nt++){
+    if ((dabs(freqs[nt])<=f0)|(dabs(freqs[nt])>=avgN)) {
       window[nt] = 0.0;
     } else {
       window[nt] = sqrt(sqrt(sqr(avgN) - sqr(freqs[nt])) *
@@ -40,16 +40,18 @@ void hybrid(dat1d *lh, dat1d *ww, dat1d *NN, dat1d *Eout, double *freqs, double 
   // reset auxiliary arrays
   for (nt=0; nt<(365 + leap) * 24; nt++) {
     aux[nt][0] = ww->data[nt];
-    aux[nt][0] = AUX[nt][0] = AUX[nt][1] = 0.0;
+    aux[nt][1] = 0.0;
   }
-
-
+  for (nt=(365+leap)*24; nt< ((365 + leap) * 24); nt++){
+    aux[nt][0] = 0.0;
+    aux[nt][1] = 0.0;
+  }
 
   // transform in time
   fftw_execute(fft);
 
-  // multiply by filter
-  for (nt=0; nt<(365 + leap) * 24; nt++) {
+    // multiply by filter
+  for (nt=0; nt< ((365 + leap) * 24); nt++) {
     AUX[nt][0] *= window[nt];
     AUX[nt][1] *= window[nt];
   }
@@ -57,9 +59,18 @@ void hybrid(dat1d *lh, dat1d *ww, dat1d *NN, dat1d *Eout, double *freqs, double 
   // transform back
   fftw_execute(ifft);
 
-  for (nt=0; nt<(365 + leap) * 24; nt++) {
-    Eout->data[nt] = RHO * (avgN - f0) * lh->data[nt] / PI2 * (aux[nt][0] * aux[nt][0] + aux[nt][1] * aux[nt][1]);
+  for (nt = 0; nt <  ((365 + leap) * 24); nt++) {
+    aux[nt][0] *= 1.0 /  ((365 + leap) * 24);
+    aux[nt][1] *= 1.0 /  ((365 + leap) * 24);
   }
 
-  if (DBGFLG>2) {printf("  hybrid: return to main\n"); fflush(NULL);}
+  for (nt = 0; nt < (365 + leap) * 24; nt++) {
+    Eout->data[nt] =
+            RHO * (NN->data[nt] - f0) * lh->data[nt] / PI2 * (aux[nt][0] * aux[nt][0] + aux[nt][1] * aux[nt][1]);
+  }
+
+  if (DBGFLG > 2) {
+    printf("  hybrid: return to main\n");
+    fflush(NULL);
+  }
 }

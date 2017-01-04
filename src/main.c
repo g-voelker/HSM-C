@@ -228,7 +228,7 @@ int main(void) {
   // get mid-point divergences
   divergence(&lsmask, NLONMIN, NLONMAX + 1, nlatmin, nlatmax + 1, leap);
 
-  if (DBGFLG>2) {printf("main: get dominant wavelengths\n");fflush(NULL);}
+  if (DBGFLG>1) {printf("main: get horizotal wavelengths\n");fflush(NULL);}
   wavelength(&lsmask, time, NLONMIN, NLONMAX + 1, nlatmin, nlatmax + 1, leap);
 
   // set struct for data time series
@@ -248,17 +248,18 @@ int main(void) {
   Eout.data = dalloc(lh.data, (size_t) lh.ntime);
 
   if (DBGFLG>1) {printf("main: begin loop over points\n");fflush(NULL);}
+  int nt;
   // calculate hybrid model on all points
-  for (nn=nlatmin; nn<=nlatmax; nn++){
-    for (mm=NLONMIN; mm<=NLONMAX; mm++){
+  for (nn=nlatmin +1 ; nn<nlatmax; nn++){
+    for (mm=NLONMIN + 1; mm<NLONMAX; mm++){
 
       if (lsmask.data[nn-1][mm] +
           lsmask.data[nn+1][mm] +
           lsmask.data[nn][mm-1] +
           lsmask.data[nn][mm+1] +
           lsmask.data[nn][mm] == 0.0) {
-
         if (DBGFLG>1) { printf("    (%d, %d)\n", nn, mm); fflush(NULL);}
+
 
         // get data
         getdataHybrid(&lsmask, &lh, &ww, &NN, nn, nlatmin, mm, NLONMIN, leap);
@@ -279,6 +280,8 @@ int main(void) {
 
   fftw_destroy_plan(fft);
   fftw_destroy_plan(ifft);
+  fftw_destroy_plan(hfft);
+  fftw_destroy_plan(hifft);
   fftw_free(aux);
   fftw_free(AUX);
   free(lsmask.lat);

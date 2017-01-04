@@ -421,7 +421,7 @@ void getdataHybrid(dat2d *lsmask, dat1d *lh, dat1d *ww, dat1d *NN, int ny, int n
   if (DBGFLG>2) { printf("  getdataHybrid: load vertical velocities and horizontal length scales\n"); fflush(NULL);}
   // load vertical velocity and horizontal length scale
   for (nmonth=0; nmonth<12; nmonth++){
-    startIndex = sum(days, nmonth);
+    startIndex = sum(days, nmonth) * 24;
     count[0] = days[nmonth]*24;
 
     // set filepath to datafiles written earlier

@@ -167,7 +167,6 @@ void autocorr(dat2d *lsmask, dat3d *ww, double ***distances, double **lh,
   }
 
   for (mm=iternlon[0]; mm<iternlon[1]; mm++) {
-
     for (nn = nlatmin; nn < nlatmin + ww->nlat; nn++) {
       // initialize wavelength with zero
       lh[nn - nlatmin][mm - nlonmin] = 0.0;
@@ -208,10 +207,10 @@ void autocorr(dat2d *lsmask, dat3d *ww, double ***distances, double **lh,
         // normalize correlation with number of points in bin
         for (index = 0; index < CORRLEN; index++) corr[index] /= norm[index];
         // get wavelegth from correlation array of point and add result to lh[nn-nlatmin][nlon-nlonmin]
-        lh[nn - nlatmin][nlon - nlonmin] += dxmax(distance, corr, CORRLEN);
+        lh[nn - nlatmin][mm - nlonmin] += dxmax(distance, corr, CORRLEN);
       }
       // normalize actual point in lh
-      lh[nn - nlatmin][nlon - nlonmin] /= days[nmonth] * 24;
+      lh[nn - nlatmin][mm - nlonmin] /= days[nmonth] * 24;
     }
   }
 
@@ -295,20 +294,7 @@ void wavelength(dat2d *lsmask, int *time, int nxmin, int nxmax, int nymin, int n
 
     // free vertical velocity
     dfree3(ww.data, (size_t) nlat, (size_t) 2*ndlon);
-
-    // debugging
-    for (nn=0; nn<nlat; nn++){
-      for (mm=0; mm<nxmax-nxmin; mm++){
-        if (mm==nxmax-nxmin-1){
-          printf("%.3e\n", lh[nmonth][nn][mm]);
-        } else {
-          printf("%.3e ", lh[nmonth][nn][mm]);
-        }
-      }
-    }
-    printf("\n");
   }
-//  exit(0);
 
   // interpolate lh and save to netcdf file
   savelh(lh, time, nxmin, nxmax, nymin, nymax, leap);

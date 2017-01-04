@@ -5,14 +5,14 @@
 #define RHO 1027
 
 // bounding box
-#define LATMIN 20
-#define LATMAX 22
-#define LONMIN 320
-#define LONMAX 325
+#define LATMIN 28
+#define LATMAX 32
+#define LONMIN 315
+#define LONMAX 340
 
 // flags
 // debug flag
-#define DBGFLG 1
+#define DBGFLG 2
 // stress correction flag
 #define STRSCOR 1
 

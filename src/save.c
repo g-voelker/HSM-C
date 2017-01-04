@@ -261,7 +261,7 @@ void savelh(double ***lh, int *time, int nxmin, int nxmax, int nymin, int nymax,
 
     // set hyperslab indicees
     start[0] = (size_t) 0;
-    count[0] = (size_t) (days[nmonth]);
+    count[0] = (size_t) (days[nmonth]*24);
 
     // open nc file and get variable ID
     if ((retval = nc_open(filepath, NC_WRITE, &ncID))) ERR(retval);
