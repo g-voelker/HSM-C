@@ -35,7 +35,7 @@
 // these parameters are used for the analysis of the vertical velocity field
 // CORRMIN / CORRMAX are the smallest / largest possible wavelengths
 #define CORRMIN 200e3
-#define CORRMAX 1000e3
+#define CORRMAX 1200e3
 #define CORRLEN 21
 
 // macros for variable / attribute name space

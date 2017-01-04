@@ -3,6 +3,7 @@
 #include <stdlib.h>
 #include "../lib/dalloc.h"
 #include "../lib/structs.h"
+#include "../lib/macros.h"
 #include "header.h"
 #include "input.h"
 
@@ -85,7 +86,7 @@ dat2d lsm() {
       pos[1] = (size_t) mm;
       if ((retval = nc_get_var1_double(ncID, dataID, pos, &mld))) ERR(retval);
 
-      if (mld==NC_FILL_DOUBLE){
+      if ((mld==NC_FILL_DOUBLE)|(dabs(lat[nn])<5)){
         mask[nn][mm] = 1.0;
       }
     }
