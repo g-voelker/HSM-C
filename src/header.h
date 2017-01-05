@@ -5,6 +5,7 @@
 
 // error macros
 #define GENERR {printf("Error: Something went wrong. Exiting now.\n"); exit(EXIT_FAILURE);};
+#define DOMAINERR {printf("Error: The domain given is invalid. Slab model aborted.\n"); exit(EXIT_FAILURE);};
 #define DIMERR {printf("Error: too few points in given domain. Hybrid model aborted.\n"); exit(EXIT_FAILURE);}
 #define VALERR {printf("Error: size of domain too small for autocorrelation calculation. Hybrid model aborted.\n"); exit(EXIT_FAILURE);}
 

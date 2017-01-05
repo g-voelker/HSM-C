@@ -14,6 +14,7 @@
 #include "input.h"
 #include "header.h"
 #include "../lib/dalloc.h"
+#include "../lib/macros.h"
 
 int sum(size_t *array, int num){
   int nn;
@@ -24,9 +25,9 @@ int sum(size_t *array, int num){
   return((int) sum);
 }
 
-void initnc(dat2d *lsmask, int* time, int nxmin, int nxmax, int nymin, int nymax, int leap){
-  int *timeSliceS, *timeSliceH, varID[7], nn = 0, mm = 0;
-  size_t nt = (365 + (size_t) leap) * 24;
+void initnc_write(dat2d *lsmask, int* time, int nxmin, int nxmax, int nymin, int nymax, int leap, int splitflag){
+  int *timeSliceS, *timeSliceH, varID[7], nn = 0;
+  size_t nt;
   size_t chunksize[3] = {28*24, CHUNK_LAT, CHUNK_LON};
   int ncID = 0, retval, dimID[3], dimVarID[3];
   char filepath[MAXCHARLEN];
@@ -47,51 +48,50 @@ void initnc(dat2d *lsmask, int* time, int nxmin, int nxmax, int nymin, int nymax
   for (nn=0; nn < 14; nn++) {
     chunksize[0] = days[nn]*24;
     // set filename
-    if (nn==0) {
-      sprintf(filepath, AUXPATH, 1);
-    } else if (nn==13) {
-      sprintf(filepath, AUXPATH, 12);
-    } else {
-      sprintf(filepath, OUTPATH, nn);
+    if (splitflag==0) {
+      if (nn == 0) {
+        sprintf(filepath, AUXPATH_N, 1);
+      } else if (nn == 13) {
+        sprintf(filepath, AUXPATH_N, 12);
+      } else {
+        sprintf(filepath, OUTPATH_N, nn);
+      }
+    } else if (splitflag==1) {
+      if (nn == 0) {
+        sprintf(filepath, AUXPATH_S, 1);
+      } else if (nn == 13) {
+        sprintf(filepath, AUXPATH_S, 12);
+      } else {
+        sprintf(filepath, OUTPATH_S, nn);
+      }
     }
     // created the file with unlimited dimension
     if ((retval = nc_create(filepath, NC_NETCDF4 | NC_CLOBBER, &ncID))) ERR(retval);
+
     // set dimensions
     // time
     if ((retval = nc_def_dim(ncID, TIME, days[nn] * 24, &dimID[0]))) ERR(retval);
     if ((retval = nc_def_var(ncID, TIME, NC_INT, 1, &dimID[0], &dimVarID[0]))) ERR(retval);
     if ((retval = nc_put_att_text(ncID, dimVarID[0], UNITS, strlen(HOURS), HOURS))) ERR(retval);
     if ((retval = nc_put_att_text(ncID, dimVarID[0], LONGNAME, strlen(TIME), TIME))) ERR(retval);
-    // allocate time array with variable length and slice from time axis
-    timeSliceS = ialloc(timeSliceS, days[nn] * 24);
-    timeSliceH = ialloc(timeSliceH, days[nn] * 24);
-    timeSliceS = islice1(time, timeSliceS, sum(days, nn) * 24, sum(days, nn+1) * 24);
-    for (nt=0; nt<days[nn]*24; nt++){
-      timeSliceH[nt] = timeSliceS[nt] / 3600 + 613608;
-    }
-    // save time slice
-    if ((retval = nc_put_var_int(ncID, dimVarID[0], &timeSliceH[0]))) ERR(retval);
-    // free time array for next time month
-    free(timeSliceS);
-    free(timeSliceH);
 
     // latitude
     if ((retval = nc_def_dim(ncID, LATS, (size_t) (nymax - nymin), &dimID[1]))) ERR(retval);
     if ((retval = nc_def_var(ncID, LATS, NC_DOUBLE, 1, &dimID[1], &dimVarID[1]))) ERR(retval);
     if ((retval = nc_put_att_text(ncID, dimVarID[1], UNITS, strlen(DEGREES_NORTH), DEGREES_NORTH))) ERR(retval);
     if ((retval = nc_put_att_text(ncID, dimVarID[1], LONGNAME, strlen(LATS), LATS))) ERR(retval);
-    if ((retval = nc_put_var_double(ncID, dimVarID[1], &latSlice[0]))) ERR(retval);
     // longitude
     if ((retval = nc_def_dim(ncID, LONS, (size_t) (nxmax - nxmin), &dimID[2]))) ERR(retval);
     if ((retval = nc_def_var(ncID, LONS, NC_DOUBLE, 1, &dimID[2], &dimVarID[2]))) ERR(retval);
     if ((retval = nc_put_att_text(ncID, dimVarID[2], UNITS, strlen(DEGREES_EAST), DEGREES_EAST))) ERR(retval);
     if ((retval = nc_put_att_text(ncID, dimVarID[2], LONGNAME, strlen(LONS), LONS))) ERR(retval);
-    if ((retval = nc_put_var_double(ncID, dimVarID[2], &lonSlice[0]))) ERR(retval);
 
     // define matrices with Fill Values that are replaced later
     // u component
     if ((retval = nc_def_var(ncID, XVEL, NC_DOUBLE, 3, dimID, &varID[0]))) ERR(retval);
+    printf(".\n");
     if ((retval = nc_def_var_chunking(ncID, varID[0], NC_CHUNKED, chunksize))) ERR(retval);
+    printf(".\n");
     if ((retval = nc_put_att_text(ncID, varID[0], UNITS, strlen(MPS), MPS))) ERR(retval);
     if ((retval = nc_put_att_text(ncID, varID[0], LONGNAME, strlen(XVEL_LONG), XVEL_LONG))) ERR(retval);
     // v component
@@ -125,6 +125,27 @@ void initnc(dat2d *lsmask, int* time, int nxmin, int nxmax, int nymin, int nymax
     if ((retval = nc_put_att_text(ncID, varID[5], UNITS, strlen(METER), METER))) ERR(retval);
     if ((retval = nc_put_att_text(ncID, varID[5], LONGNAME, strlen(LH_LONG), LH_LONG))) ERR(retval);
 
+    // this is the end of the definition mode
+
+    // allocate time array with variable length and slice from time axis
+    timeSliceS = ialloc(timeSliceS, days[nn] * 24);
+    timeSliceH = ialloc(timeSliceH, days[nn] * 24);
+    timeSliceS = islice1(time, timeSliceS, sum(days, nn) * 24, sum(days, nn+1) * 24);
+    for (nt=0; nt<days[nn]*24; nt++){
+      timeSliceH[nt] = timeSliceS[nt] / 3600 + 613608;
+    }
+    // save time slice
+    if ((retval = nc_put_var_int(ncID, dimVarID[0], &timeSliceH[0]))) ERR(retval);
+    // free time array for next time month
+    free(timeSliceS);
+    free(timeSliceH);
+
+    // save latitude
+    if ((retval = nc_put_var_double(ncID, dimVarID[1], &latSlice[0]))) ERR(retval);
+
+    // save longitude
+    if ((retval = nc_put_var_double(ncID, dimVarID[2], &lonSlice[0]))) ERR(retval);
+
     // close netcdf file
     if ((retval = nc_close(ncID))) ERR(retval);
   }
@@ -134,8 +155,85 @@ void initnc(dat2d *lsmask, int* time, int nxmin, int nxmax, int nymin, int nymax
   free(lonSlice);
 }
 
-void savePoint(double* uu, double* vv, double* mld, double* taux, double* tauy,
-               int* time, int nxmin, int nx, int nymin, int ny, int leap){
+void initnc(dat2d *lsmask, int* time, int nxmin, int nxmax, int nymin, int nymax, int leap, int nlat5, int slat5){
+  int splitflag = 0, nn;
+
+  nlat5 = NC_FILL_INT;
+  slat5 = NC_FILL_INT;
+
+  // check if we are operating on northern / southern / both hemispheres
+  if ((lsmask->lat[nymin]>0) & (lsmask->lat[nymax]>0)) {
+    splitflag = 0;
+  } else if ((lsmask->lat[nymin]<0)&(lsmask->lat[nymax]<0)) {
+    splitflag = 1;
+  } else {
+    splitflag = 2;
+    // throw error when region is invalid (within 5 degr. from equator
+    if ((dabs(lsmask->lat[nymin]) < 5) & (dabs(lsmask->lat[nymax]) < 5)){
+      DOMAINERR;
+    }
+  }
+
+  // write accordingly
+  if (splitflag==0){
+    initnc_write(lsmask, time, nxmin, nxmax, nymin, nymax, leap, splitflag);
+  } else if (splitflag==1) {
+    initnc_write(lsmask, time, nxmin, nxmax, nymin, nymax, leap, splitflag);
+  } else if (splitflag==2) {
+    // find nlat5 and slat5
+    for (nn=nymin; nn<nymax; nn++){
+      if (dabs(lsmask->lat[nn]) < 5) break;
+    }
+
+    if (lsmask->lat[nn] > 0){
+      nlat5 = nn;
+    } else {
+      slat5 = nn;
+    }
+
+    for (nn=nymax; nn>nymin; nn--){
+      if (dabs(lsmask->lat[nn]) < 5) break;
+    }
+
+    if (lsmask->lat[nn] > 0){
+      nlat5 = nn;
+    } else {
+      slat5 = nn;
+    }
+
+    // if nlat5 or slat5 did not receive a value throw an error
+    if ((nlat5==NC_FILL_INT)|(slat5==NC_FILL_INT)){
+      GENERR
+    }
+
+    // write two files with according nymin / nymax and according splitflag
+    if (nymin == nlat5) {
+      // in this case the border at nymin is within 5 degr of the  the equator (NORTH)
+      initnc_write(lsmask, time, nxmin, nxmax, slat5, nymax, leap, 1);
+    } else if (nymax == nlat5) {
+      // in this case the border at nymax is within 5 degr of the  the equator (NORTH)
+      initnc_write(lsmask, time, nxmin, nxmax, nymin, slat5, leap, 1);
+    } else if (nymin == slat5) {
+      // in this case the border at nymin is within 5 degr of the  the equator (SOUTH)
+      initnc_write(lsmask, time, nxmin, nxmax, nlat5, nymax, leap, 0);
+    } else if (nymax == slat5) {
+      // in this case the border at nymax is within 5 degr of the  the equator (SOUTH)
+      initnc_write(lsmask, time, nxmin, nxmax, nymin, nlat5, leap, 0);
+    } else {
+      // in this case there is a full domain that stretches on both sides of the equator
+      if (lsmask->lat[nymin]<0) {
+        initnc_write(lsmask, time, nxmin, nxmax, nymin, slat5, leap, 1);
+        initnc_write(lsmask, time, nxmin, nxmax, nlat5, nymax, leap, 0);
+      } else if (lsmask->lat[nymin]>0) {
+        initnc_write(lsmask, time, nxmin, nxmax, slat5, nymax, leap, 1);
+        initnc_write(lsmask, time, nxmin, nxmax, nymin, nlat5, leap, 0);
+      }
+    }
+  }
+}
+
+void savePoint(dat2d *lsmask, double* uu, double* vv, double* mld, double* taux, double* tauy,
+               int* time, int nxmin, int nx, int nymin, int ny, int leap, int nlat5, int slat5){
   size_t days[14] = {31, 31, 28 + (size_t) leap, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31, 31};
   int nn = 0, nt = 0, mon = 0, ncID, retval, varID, mm = 0;
   int *index;
@@ -171,18 +269,41 @@ void savePoint(double* uu, double* vv, double* mld, double* taux, double* tauy,
       windWork[mm - iterbounds[0]] = taux[mm] * uSlice[mm - iterbounds[0]] + tauy[mm] * vSlice[mm - iterbounds[0]];
     }
 
-    // set filepath as above
-    if (nn==0) {
-      sprintf(filepath, AUXPATH, 1);
-    } else if (nn==13) {
-      sprintf(filepath, AUXPATH, 12);
+    // set filepath and start index depending on hemisphere
+    if (lsmask->lat[ny]>5) {
+      if (nn == 0) {
+        sprintf(filepath, AUXPATH_N, 1);
+      } else if (nn == 13) {
+        sprintf(filepath, AUXPATH_N, 12);
+      } else {
+        sprintf(filepath, OUTPATH_N, nn);
+      }
+      if (lsmask->lat[nymin] > lsmask->lat[nlat5]){
+        start[1] = (size_t) (ny-nymin);
+      } else if (lsmask->lat[nymin] <= lsmask->lat[nlat5]){
+        start[1] = (size_t) (ny-nlat5);
+      }
+    } else if (lsmask->lat[ny]<-5) {
+      if (nn == 0) {
+        sprintf(filepath, AUXPATH_S, 1);
+      } else if (nn == 13) {
+        sprintf(filepath, AUXPATH_S, 12);
+      } else {
+        sprintf(filepath, OUTPATH_S, nn);
+      }
+      if (lsmask->lat[nymin] < lsmask->lat[slat5]){
+        start[1] = (size_t) (ny-nymin);
+      } else if (lsmask->lat[nymin] >= lsmask->lat[slat5]){
+        start[1] = (size_t) (ny-slat5);
+      }
     } else {
-      sprintf(filepath, OUTPATH, nn);
+      // if lat of point is in forbidden latitude band throw an error
+      GENERR
     }
+
     // set hyperslab indicees
     start[0] = (size_t) 0;
     count[0] = (size_t) (iterbounds[1] - iterbounds[0]);
-    start[1] = (size_t) (ny-nymin);
     count[1] =  1;
     start[2] = (size_t) (nx-nxmin);
     count[2] =  1;
@@ -218,7 +339,8 @@ void savePoint(double* uu, double* vv, double* mld, double* taux, double* tauy,
   if (DBGFLG>2) {printf("  savePoint: return to main\n"); fflush(NULL);}
 }
 
-void savelh(double ***lh, int *time, int nxmin, int nxmax, int nymin, int nymax, int leap){
+void savelh(dat2d *lsmask, double ***lh, int *time,
+            int nxmin, int nxmax, int nymin, int nymax, int leap, int hemflag){
   size_t days[12] = {31, 28 + (size_t) leap, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31};
   int nx, ny, nt, nint, ncID, retval, varID, nmonth = 0;
   size_t start[3], count[3];
@@ -257,7 +379,11 @@ void savelh(double ***lh, int *time, int nxmin, int nxmax, int nymin, int nymax,
     lhSlice = dalloc(lhSlice, (size_t) days[nmonth]*24);
 
     // set filepath as above
-    sprintf(filepath, OUTPATH, nmonth+1);
+    if (hemflag==0) {
+      sprintf(filepath, OUTPATH_N, nmonth+1);
+    } else if (hemflag==1) {
+      sprintf(filepath, OUTPATH_S, nmonth+1);
+    }
 
     // set hyperslab indicees
     start[0] = (size_t) 0;
@@ -268,8 +394,8 @@ void savelh(double ***lh, int *time, int nxmin, int nxmax, int nymin, int nymax,
     if ((retval = nc_inq_varid(ncID, LH, &varID))) ERR(retval);
 
     // start iteration here
-    for (nx=nxmin; nx<nxmax; nx++) {
-      for (ny=nymin; ny<nymax; ny++) {
+    for (ny=nymin; ny<nymax; ny++) {
+      for (nx=nxmin; nx<nxmax; nx++) {
         // interpolate in time
         for (nt=0; nt<days[nmonth]*24; nt++) {
           // check position relative to monthly values
@@ -305,7 +431,7 @@ void savelh(double ***lh, int *time, int nxmin, int nxmax, int nymin, int nymax,
   if (DBGFLG>2) {printf("  savelh: done.\n"); fflush(NULL);}
 }
 
-void savePointHybrid(dat1d *Eout, int ny, int nymin, int nx, int nxmin, int leap){
+void savePointHybrid(dat2d *lsmask, dat1d *Eout, int ny, int nymin, int nx, int nxmin, int leap, int nlat5, int slat5){
   size_t days[14] = {31, 28 + (size_t) leap, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31};
   int nmonth = 0, ncID, retval, varID;
   int iterbounds[2];
@@ -325,12 +451,28 @@ void savePointHybrid(dat1d *Eout, int ny, int nymin, int nx, int nxmin, int leap
     EoutSlice = dslice1(Eout->data, EoutSlice, iterbounds[0], iterbounds[1]);
 
     // set filepath as above
-    sprintf(filepath, OUTPATH, nmonth + 1);
+    if (lsmask->lat[ny]>5) {
+      sprintf(filepath, OUTPATH_N, nmonth+1);
+      if (lsmask->lat[nymin] > lsmask->lat[nlat5]){
+        start[1] = (size_t) (ny-nymin);
+      } else if (lsmask->lat[nymin] <= lsmask->lat[nlat5]){
+        start[1] = (size_t) (ny-nlat5);
+      }
+    } else if (lsmask->lat[ny]<-5) {
+      sprintf(filepath, OUTPATH_S, nmonth+1);
+      if (lsmask->lat[nymin] < lsmask->lat[slat5]){
+        start[1] = (size_t) (ny-nymin);
+      } else if (lsmask->lat[nymin] >= lsmask->lat[slat5]){
+        start[1] = (size_t) (ny-slat5);
+      }
+    } else {
+      // if lat of point is in forbidden latitude band throw an error
+      GENERR
+    }
 
     // set hyperslab indicees
     start[0] = (size_t) 0;
     count[0] = (size_t) (iterbounds[1] - iterbounds[0]);
-    start[1] = (size_t) (ny-nymin);
     count[1] =  1;
     start[2] = (size_t) (nx-nxmin);
     count[2] =  1;
