@@ -4,13 +4,13 @@
 
 extern int sum(size_t *array, int num);
 
-extern void initnc(dat2d *lsmask, int* time, int xmin, int xmax, int ymin, int ymax, int leap, int nlat5, int slat5);
+extern void initnc(dat2d *lsmask, int* time, int xmin, int xmax, int ymin, int ymax, int leap, int *nlat5, int *slat5);
 
 extern void savePoint(dat2d *lsmask, double* uu, double* vv, double* mld,  double* taux, double* tauy,
-                      int* time, int nxmin, int nx, int nymin, int ny, int leap, int nlat5, int slat5);
+                      int* time, int nxmin, int nx, int nymin, int nymax, int ny, int leap, int nlat5, int slat5);
 
 extern void savelh(dat2d *lsmask, double ***lh, int *time,
                    int nxmin, int nxmax, int nymin, int nymax, int leap, int hemflag);
 
 extern void savePointHybrid(dat2d *lsmask, dat1d *Eout,
-                            int ny, int nymin, int nx, int nxmin, int leap, int nlat5, int slat5);
+                            int ny, int nymin, int nymax, int nx, int nxmin, int leap, int nlat5, int slat5);

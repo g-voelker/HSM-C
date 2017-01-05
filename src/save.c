@@ -89,9 +89,7 @@ void initnc_write(dat2d *lsmask, int* time, int nxmin, int nxmax, int nymin, int
     // define matrices with Fill Values that are replaced later
     // u component
     if ((retval = nc_def_var(ncID, XVEL, NC_DOUBLE, 3, dimID, &varID[0]))) ERR(retval);
-    printf(".\n");
     if ((retval = nc_def_var_chunking(ncID, varID[0], NC_CHUNKED, chunksize))) ERR(retval);
-    printf(".\n");
     if ((retval = nc_put_att_text(ncID, varID[0], UNITS, strlen(MPS), MPS))) ERR(retval);
     if ((retval = nc_put_att_text(ncID, varID[0], LONGNAME, strlen(XVEL_LONG), XVEL_LONG))) ERR(retval);
     // v component
@@ -155,11 +153,11 @@ void initnc_write(dat2d *lsmask, int* time, int nxmin, int nxmax, int nymin, int
   free(lonSlice);
 }
 
-void initnc(dat2d *lsmask, int* time, int nxmin, int nxmax, int nymin, int nymax, int leap, int nlat5, int slat5){
+void initnc(dat2d *lsmask, int* time, int nxmin, int nxmax, int nymin, int nymax, int leap, int *nlat5, int *slat5){
   int splitflag = 0, nn;
 
-  nlat5 = NC_FILL_INT;
-  slat5 = NC_FILL_INT;
+  *nlat5 = NC_FILL_INT;
+  *slat5 = NC_FILL_INT;
 
   // check if we are operating on northern / southern / both hemispheres
   if ((lsmask->lat[nymin]>0) & (lsmask->lat[nymax]>0)) {
@@ -186,9 +184,9 @@ void initnc(dat2d *lsmask, int* time, int nxmin, int nxmax, int nymin, int nymax
     }
 
     if (lsmask->lat[nn] > 0){
-      nlat5 = nn;
+      memcpy(nlat5, &nn, sizeof(int));
     } else {
-      slat5 = nn;
+      memcpy(slat5, &nn, sizeof(int));
     }
 
     for (nn=nymax; nn>nymin; nn--){
@@ -196,44 +194,48 @@ void initnc(dat2d *lsmask, int* time, int nxmin, int nxmax, int nymin, int nymax
     }
 
     if (lsmask->lat[nn] > 0){
-      nlat5 = nn;
+      memcpy(nlat5, &nn, sizeof(int));
     } else {
-      slat5 = nn;
+      memcpy(slat5, &nn, sizeof(int));
     }
 
     // if nlat5 or slat5 did not receive a value throw an error
-    if ((nlat5==NC_FILL_INT)|(slat5==NC_FILL_INT)){
+    if ((*nlat5==NC_FILL_INT)|(*slat5==NC_FILL_INT)){
       GENERR
     }
 
     // write two files with according nymin / nymax and according splitflag
-    if (nymin == nlat5) {
+    if (nymin == *nlat5) {
       // in this case the border at nymin is within 5 degr of the  the equator (NORTH)
-      initnc_write(lsmask, time, nxmin, nxmax, slat5, nymax, leap, 1);
-    } else if (nymax == nlat5) {
+      initnc_write(lsmask, time, nxmin, nxmax, *slat5, nymax, leap, 1);
+    } else if (nymax == *nlat5) {
       // in this case the border at nymax is within 5 degr of the  the equator (NORTH)
-      initnc_write(lsmask, time, nxmin, nxmax, nymin, slat5, leap, 1);
-    } else if (nymin == slat5) {
+      initnc_write(lsmask, time, nxmin, nxmax, nymin, *slat5, leap, 1);
+    } else if (nymin == *slat5) {
       // in this case the border at nymin is within 5 degr of the  the equator (SOUTH)
-      initnc_write(lsmask, time, nxmin, nxmax, nlat5, nymax, leap, 0);
-    } else if (nymax == slat5) {
+      initnc_write(lsmask, time, nxmin, nxmax, *nlat5, nymax, leap, 0);
+    } else if (nymax == *slat5) {
       // in this case the border at nymax is within 5 degr of the  the equator (SOUTH)
-      initnc_write(lsmask, time, nxmin, nxmax, nymin, nlat5, leap, 0);
+      initnc_write(lsmask, time, nxmin, nxmax, nymin, *nlat5, leap, 0);
     } else {
       // in this case there is a full domain that stretches on both sides of the equator
       if (lsmask->lat[nymin]<0) {
-        initnc_write(lsmask, time, nxmin, nxmax, nymin, slat5, leap, 1);
-        initnc_write(lsmask, time, nxmin, nxmax, nlat5, nymax, leap, 0);
+
+        initnc_write(lsmask, time, nxmin, nxmax, nymin, *slat5, leap, 1);
+        initnc_write(lsmask, time, nxmin, nxmax, *nlat5, nymax, leap, 0);
+
       } else if (lsmask->lat[nymin]>0) {
-        initnc_write(lsmask, time, nxmin, nxmax, slat5, nymax, leap, 1);
-        initnc_write(lsmask, time, nxmin, nxmax, nymin, nlat5, leap, 0);
+
+        initnc_write(lsmask, time, nxmin, nxmax, *slat5, nymax, leap, 1);
+        initnc_write(lsmask, time, nxmin, nxmax, nymin, *nlat5, leap, 0);
+
       }
     }
   }
 }
 
 void savePoint(dat2d *lsmask, double* uu, double* vv, double* mld, double* taux, double* tauy,
-               int* time, int nxmin, int nx, int nymin, int ny, int leap, int nlat5, int slat5){
+               int* time, int nxmin, int nx, int nymin, int nymax, int ny, int leap, int nlat5, int slat5){
   size_t days[14] = {31, 31, 28 + (size_t) leap, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31, 31};
   int nn = 0, nt = 0, mon = 0, ncID, retval, varID, mm = 0;
   int *index;
@@ -243,8 +245,6 @@ void savePoint(dat2d *lsmask, double* uu, double* vv, double* mld, double* taux,
   struct tm *auxTime;
   double *uSlice, *vSlice, *mldSlice, *windWork;
   char filepath[MAXCHARLEN];
-
-
 
   for (nn=0; nn<14; nn++) {
     if (DBGFLG>2) {printf("  savePoint: processing month %d\n", nn); fflush(NULL);}
@@ -269,7 +269,7 @@ void savePoint(dat2d *lsmask, double* uu, double* vv, double* mld, double* taux,
       windWork[mm - iterbounds[0]] = taux[mm] * uSlice[mm - iterbounds[0]] + tauy[mm] * vSlice[mm - iterbounds[0]];
     }
 
-    // set filepath and start index depending on hemisphere
+    // set filepath depending on hemisphere
     if (lsmask->lat[ny]>5) {
       if (nn == 0) {
         sprintf(filepath, AUXPATH_N, 1);
@@ -277,11 +277,6 @@ void savePoint(dat2d *lsmask, double* uu, double* vv, double* mld, double* taux,
         sprintf(filepath, AUXPATH_N, 12);
       } else {
         sprintf(filepath, OUTPATH_N, nn);
-      }
-      if (lsmask->lat[nymin] > lsmask->lat[nlat5]){
-        start[1] = (size_t) (ny-nymin);
-      } else if (lsmask->lat[nymin] <= lsmask->lat[nlat5]){
-        start[1] = (size_t) (ny-nlat5);
       }
     } else if (lsmask->lat[ny]<-5) {
       if (nn == 0) {
@@ -291,11 +286,24 @@ void savePoint(dat2d *lsmask, double* uu, double* vv, double* mld, double* taux,
       } else {
         sprintf(filepath, OUTPATH_S, nn);
       }
-      if (lsmask->lat[nymin] < lsmask->lat[slat5]){
-        start[1] = (size_t) (ny-nymin);
-      } else if (lsmask->lat[nymin] >= lsmask->lat[slat5]){
-        start[1] = (size_t) (ny-slat5);
-      }
+    }
+
+    // set start index according to hemisphere
+    if (((lsmask->lat[nymin]>0)&(lsmask->lat[nymax]>0))|
+        ((lsmask->lat[nymin]<0)&(lsmask->lat[nymax]<0))|
+        ((lsmask->lat[ny] > 5)&(lsmask->lat[nymin] > lsmask->lat[nymax]))|
+        ((lsmask->lat[ny] > -5)&(lsmask->lat[nymin] < lsmask->lat[nymax]))){
+
+      start[1] = (size_t) (ny-nymin);
+
+    } else if ((lsmask->lat[ny] > 5)&(lsmask->lat[nymin] < lsmask->lat[nymax])) {
+
+      start[1] = (size_t) (ny-nlat5);
+
+    } else if ((lsmask->lat[ny] < -5)&(lsmask->lat[nymin] > lsmask->lat[nymax])) {
+
+      start[1] = (size_t) (ny-slat5);
+
     } else {
       // if lat of point is in forbidden latitude band throw an error
       GENERR
@@ -307,6 +315,13 @@ void savePoint(dat2d *lsmask, double* uu, double* vv, double* mld, double* taux,
     count[1] =  1;
     start[2] = (size_t) (nx-nxmin);
     count[2] =  1;
+
+//    printf("%d\n", ny);
+//    printf("%d\n", slat5);
+//    printf("%d, %d, %d, %d, %d, %d\n",
+//           (int) start[0], (int) count[0],
+//           (int) start[1], (int) count[1],
+//           (int) start[2], (int) count[2]);
 
     if (DBGFLG>2) {printf("  savePoint: saving data to nc file\n"); fflush(NULL);}
     // open nc file
@@ -431,7 +446,7 @@ void savelh(dat2d *lsmask, double ***lh, int *time,
   if (DBGFLG>2) {printf("  savelh: done.\n"); fflush(NULL);}
 }
 
-void savePointHybrid(dat2d *lsmask, dat1d *Eout, int ny, int nymin, int nx, int nxmin, int leap, int nlat5, int slat5){
+void savePointHybrid(dat2d *lsmask, dat1d *Eout, int ny, int nymin, int nymax, int nx, int nxmin, int leap, int nlat5, int slat5){
   size_t days[14] = {31, 28 + (size_t) leap, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31};
   int nmonth = 0, ncID, retval, varID;
   int iterbounds[2];
@@ -453,18 +468,29 @@ void savePointHybrid(dat2d *lsmask, dat1d *Eout, int ny, int nymin, int nx, int 
     // set filepath as above
     if (lsmask->lat[ny]>5) {
       sprintf(filepath, OUTPATH_N, nmonth+1);
-      if (lsmask->lat[nymin] > lsmask->lat[nlat5]){
-        start[1] = (size_t) (ny-nymin);
-      } else if (lsmask->lat[nymin] <= lsmask->lat[nlat5]){
-        start[1] = (size_t) (ny-nlat5);
-      }
     } else if (lsmask->lat[ny]<-5) {
       sprintf(filepath, OUTPATH_S, nmonth+1);
-      if (lsmask->lat[nymin] < lsmask->lat[slat5]){
-        start[1] = (size_t) (ny-nymin);
-      } else if (lsmask->lat[nymin] >= lsmask->lat[slat5]){
-        start[1] = (size_t) (ny-slat5);
-      }
+    } else {
+      // if lat of point is in forbidden latitude band throw an error
+      GENERR
+    }
+
+    // set start index according to hemisphere
+    if (((lsmask->lat[nymin]>0)&(lsmask->lat[nymax]>0))|
+        ((lsmask->lat[nymin]<0)&(lsmask->lat[nymax]<0))|
+        ((lsmask->lat[ny] > 5)&(lsmask->lat[nymin] > lsmask->lat[nymax]))|
+        ((lsmask->lat[ny] > -5)&(lsmask->lat[nymin] < lsmask->lat[nymax]))){
+
+      start[1] = (size_t) (ny-nymin);
+
+    } else if ((lsmask->lat[ny] > 5)&(lsmask->lat[nymin] < lsmask->lat[nymax])) {
+
+      start[1] = (size_t) (ny-nlat5);
+
+    } else if ((lsmask->lat[ny] < -5)&(lsmask->lat[nymin] > lsmask->lat[nymax])) {
+
+      start[1] = (size_t) (ny-slat5);
+
     } else {
       // if lat of point is in forbidden latitude band throw an error
       GENERR

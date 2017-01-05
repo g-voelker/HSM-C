@@ -165,7 +165,8 @@ int main(void) {
   if (DBGFLG>2) {printf("main: init data files\n"); fflush(NULL);}
 
   // be aware that the lat array may be sorted inversely
-  initnc(&lsmask, time, NLONMIN, NLONMAX + 1, nlatmin, nlatmax + 1, leap, nlat5, slat5);
+  initnc(&lsmask, time, NLONMIN, NLONMAX + 1, nlatmin, nlatmax + 1, leap, &nlat5, &slat5);
+
   dat2d_2 damp = initdamping(&lsmask);
 
   if (DBGFLG>0) {
@@ -203,7 +204,7 @@ int main(void) {
           vv[ll] = aux[ll][1];
         }
         // write out mld, time, u and v
-        savePoint(&lsmask, uu, vv, mld, taux, tauy, time, NLONMIN, mm, nlatmin, nn, leap, nlat5, slat5);
+        savePoint(&lsmask, uu, vv, mld, taux, tauy, time, NLONMIN, mm, nlatmin, nlatmax, nn, leap, nlat5, slat5);
       }
     }
   }
@@ -213,21 +214,18 @@ int main(void) {
   if (DBGFLG>1) {printf("main: get vertical velocities and horizotal wavelengths\n");fflush(NULL);}
 
   // get mid-point divergences on both hemispheres
-
-  if ((LATMIN > 0) & (LATMAX > 0)) { // both on northern hemisphere
-
-    divergence(&lsmask, NLONMIN, NLONMAX + 1, nlatmin, nlatmax + 1, leap, 0);
-    wavelength(&lsmask, time, NLONMIN, NLONMAX + 1, nlatmin, nlatmax + 1, leap, 0);
-
-  } else if ((LATMIN < 0) & (LATMAX < 0)) { // both on southern hemisphere
-
-    divergence(&lsmask, NLONMIN, NLONMAX + 1, nlatmin, nlatmax + 1, leap, 1);
-    wavelength(&lsmask, time, NLONMIN, NLONMAX + 1, nlatmin, nlatmax + 1, leap, 1);
-
-  }
-
   if (NLATMIN == nlatmin) {
-    if (LATMIN > -5) { // latitude minimum in forbidden band
+    if ((LATMIN > 0) & (LATMAX > 0)) { // both on northern hemisphere
+
+      divergence(&lsmask, NLONMIN, NLONMAX + 1, nlatmin, nlatmax + 1, leap, 0);
+      wavelength(&lsmask, time, NLONMIN, NLONMAX + 1, nlatmin, nlatmax + 1, leap, 0);
+
+    } else if ((LATMIN < 0) & (LATMAX < 0)) { // both on southern hemisphere
+
+      divergence(&lsmask, NLONMIN, NLONMAX + 1, nlatmin, nlatmax + 1, leap, 1);
+      wavelength(&lsmask, time, NLONMIN, NLONMAX + 1, nlatmin, nlatmax + 1, leap, 1);
+
+    } else if (LATMIN > -5) { // latitude minimum in forbidden band
 
       divergence(&lsmask, NLONMIN, NLONMAX + 1, nlat5, nlatmax + 1, leap, 0);
       wavelength(&lsmask, time, NLONMIN, NLONMAX + 1, nlat5, nlatmax + 1, leap, 0);
@@ -247,7 +245,17 @@ int main(void) {
 
     }
   } else if (NLATMAX == nlatmin) {
-    if (LATMIN > -5) { // latitude minimum in forbidden band
+    if ((LATMIN > 0) & (LATMAX > 0)) { // both on northern hemisphere
+
+      divergence(&lsmask, NLONMIN, NLONMAX + 1, nlatmin, nlatmax + 1, leap, 0);
+      wavelength(&lsmask, time, NLONMIN, NLONMAX + 1, nlatmin, nlatmax + 1, leap, 0);
+
+    } else if ((LATMIN < 0) & (LATMAX < 0)) { // both on southern hemisphere
+
+      divergence(&lsmask, NLONMIN, NLONMAX + 1, nlatmin, nlatmax + 1, leap, 1);
+      wavelength(&lsmask, time, NLONMIN, NLONMAX + 1, nlatmin, nlatmax + 1, leap, 1);
+
+    } else if (LATMIN > -5) { // latitude minimum in forbidden band
 
       divergence(&lsmask, NLONMIN, NLONMAX + 1, nlatmin, nlat5 + 1, leap, 0);
       wavelength(&lsmask, time, NLONMIN, NLONMAX + 1, nlatmin, nlat5 + 1, leap, 0);
@@ -310,7 +318,7 @@ int main(void) {
         hybrid(&lh, &ww, &NN, &Eout, hfreqs, f0, HAUX, haux, hfft, hifft, leap);
 
         // save data to nc file
-        savePointHybrid(&lsmask, &Eout, nn, nlatmin, mm, NLONMIN, leap, nlat5, slat5);
+        savePointHybrid(&lsmask, &Eout, nn, nlatmin, nlatmax, mm, NLONMIN, leap, nlat5, slat5);
       }
     }
   }
