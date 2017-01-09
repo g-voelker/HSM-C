@@ -165,7 +165,9 @@ int main(void) {
   if (DBGFLG>2) {printf("main: init data files\n"); fflush(NULL);}
 
   // be aware that the lat array may be sorted inversely
-  initnc(&lsmask, time, NLONMIN, NLONMAX + 1, nlatmin, nlatmax + 1, leap, &nlat5, &slat5);
+  if (SLABFLG==1) { // init nc files only if slab model is supposed to run.
+    initnc(&lsmask, time, NLONMIN, NLONMAX + 1, nlatmin, nlatmax + 1, leap, &nlat5, &slat5);
+  }
 
   dat2d_2 damp = initdamping(&lsmask);
 
@@ -174,153 +176,176 @@ int main(void) {
     printf("     (latmin, latmax, lonmin, lonmax):\n");
     printf("       %.2f; %.2f; %.2f; %.2f;\n",
            lsmask.lat[NLATMIN], lsmask.lat[NLATMAX], lsmask.lon[NLONMIN], lsmask.lon[NLONMAX]);
-    printf("main: running slab model\n");
   }
-  if (DBGFLG>1) {
-    printf("main: begin loop over points\n");
-  }
-  fflush(NULL);
 
-  // calculate slab model on all points
-  for (nn=nlatmin; nn<=nlatmax; nn++){
-    for (mm=NLONMIN; mm<=NLONMAX; mm++){
-      // check if point is on land; else leave fill value in file
-      if (lsmask.data[nn][mm]==0.0) {
-        if (DBGFLG > 1) {
-          printf("    (%d, %d)\n", nn, mm);
-          fflush(NULL);
+  if (SLABFLG==1) {
+    if (DBGFLG > 0) {
+      printf("main: running slab model\n");
+    }
+    if (DBGFLG > 1) {
+      printf("main: begin loop over points\n");
+    }
+    fflush(NULL);
+
+    // calculate slab model on all points
+    for (nn = nlatmin; nn <= nlatmax; nn++) {
+      for (mm = NLONMIN; mm <= NLONMAX; mm++) {
+        // check if point is on land; else leave fill value in file
+        if (lsmask.data[nn][mm] == 0.0) {
+          if (DBGFLG > 1) {
+            printf("    (%d, %d)\n", nn, mm);
+            fflush(NULL);
+          }
+          // load stress and mixed layer depth data
+          getdata(nn, mm, leap, time, mld, taux, tauy);
+          // set damping parameter
+          r0 = damping(&damp, nn, lsmask.lon[mm]);
+          // set Coriolis frequency
+          f0 = coriolis(lsmask.lat[nn]);
+          // calculate u and v
+          solve(fft, ifft, r0, f0, rho0, leap, taux, tauy, mld, freqs, aux, AUX);
+          // set velocities
+          for (ll = 0; ll < ((365 + 62 + leap) * 24); ll++) {
+            uu[ll] = aux[ll][0];
+            vv[ll] = aux[ll][1];
+          }
+          // write out mld, time, u and v
+          savePoint(&lsmask, uu, vv, mld, taux, tauy, time, NLONMIN, mm, nlatmin, nlatmax, nn, leap, nlat5, slat5);
         }
-        // load stress and mixed layer depth data
-        getdata(nn, mm, leap, time, mld, taux, tauy);
-        // set damping parameter
-        r0 = damping(&damp, nn, lsmask.lon[mm]);
-        // set Coriolis frequency
-        f0 = coriolis(lsmask.lat[nn]);
-        // calculate u and v
-        solve(fft, ifft, r0, f0, rho0, leap, taux, tauy, mld, freqs, aux, AUX);
-        // set velocities
-        for (ll = 0; ll < ((365 + 62 + leap) * 24); ll++) {
-          uu[ll] = aux[ll][0];
-          vv[ll] = aux[ll][1];
-        }
-        // write out mld, time, u and v
-        savePoint(&lsmask, uu, vv, mld, taux, tauy, time, NLONMIN, mm, nlatmin, nlatmax, nn, leap, nlat5, slat5);
       }
     }
   }
 
-  if (DBGFLG>0) {printf("main: proceed with hybrid extension\n"); fflush(NULL);}
-
-  if (DBGFLG>1) {printf("main: get vertical velocities and horizotal wavelengths\n");fflush(NULL);}
-
-  // get mid-point divergences on both hemispheres
-  if (NLATMIN == nlatmin) {
-    if ((LATMIN > 0) & (LATMAX > 0)) { // both on northern hemisphere
-
-      divergence(&lsmask, NLONMIN, NLONMAX + 1, nlatmin, nlatmax + 1, leap, 0);
-      wavelength(&lsmask, time, NLONMIN, NLONMAX + 1, nlatmin, nlatmax + 1, leap, 0);
-
-    } else if ((LATMIN < 0) & (LATMAX < 0)) { // both on southern hemisphere
-
-      divergence(&lsmask, NLONMIN, NLONMAX + 1, nlatmin, nlatmax + 1, leap, 1);
-      wavelength(&lsmask, time, NLONMIN, NLONMAX + 1, nlatmin, nlatmax + 1, leap, 1);
-
-    } else if (LATMIN > -5) { // latitude minimum in forbidden band
-
-      divergence(&lsmask, NLONMIN, NLONMAX + 1, nlat5, nlatmax + 1, leap, 0);
-      wavelength(&lsmask, time, NLONMIN, NLONMAX + 1, nlat5, nlatmax + 1, leap, 0);
-
-    } else if (LATMAX < 5) { // latitude maximum in forbidden band
-
-      divergence(&lsmask, NLONMIN, NLONMAX + 1, nlatmin, slat5 + 1, leap, 1);
-      wavelength(&lsmask, time, NLONMIN, NLONMAX + 1, nlatmin, slat5 + 1, leap, 1);
-
-    } else { // general case with two valid hemispheres
-
-      divergence(&lsmask, NLONMIN, NLONMAX + 1, nlat5, nlatmax + 1, leap, 0);
-      wavelength(&lsmask, time, NLONMIN, NLONMAX + 1, nlat5, nlatmax + 1, leap, 0);
-
-      divergence(&lsmask, NLONMIN, NLONMAX + 1, nlatmin, slat5 + 1, leap, 1);
-      wavelength(&lsmask, time, NLONMIN, NLONMAX + 1, nlatmin, slat5 + 1, leap, 1);
-
+  if (HYBRIDFLG==1) {
+    if (DBGFLG > 0) {
+      printf("main: run hybrid extension\n");
+      fflush(NULL);
     }
-  } else if (NLATMAX == nlatmin) {
-    if ((LATMIN > 0) & (LATMAX > 0)) { // both on northern hemisphere
-
-      divergence(&lsmask, NLONMIN, NLONMAX + 1, nlatmin, nlatmax + 1, leap, 0);
-      wavelength(&lsmask, time, NLONMIN, NLONMAX + 1, nlatmin, nlatmax + 1, leap, 0);
-
-    } else if ((LATMIN < 0) & (LATMAX < 0)) { // both on southern hemisphere
-
-      divergence(&lsmask, NLONMIN, NLONMAX + 1, nlatmin, nlatmax + 1, leap, 1);
-      wavelength(&lsmask, time, NLONMIN, NLONMAX + 1, nlatmin, nlatmax + 1, leap, 1);
-
-    } else if (LATMIN > -5) { // latitude minimum in forbidden band
-
-      divergence(&lsmask, NLONMIN, NLONMAX + 1, nlatmin, nlat5 + 1, leap, 0);
-      wavelength(&lsmask, time, NLONMIN, NLONMAX + 1, nlatmin, nlat5 + 1, leap, 0);
-
-    } else if (LATMAX < 5) { // latitude maximum in forbidden band
-
-      divergence(&lsmask, NLONMIN, NLONMAX + 1, slat5, nlatmax + 1, leap, 1);
-      wavelength(&lsmask, time, NLONMIN, NLONMAX + 1, slat5, nlatmax + 1, leap, 1);
-
-    } else { // general case with two valid hemispheres
-
-      divergence(&lsmask, NLONMIN, NLONMAX + 1, nlatmin, nlat5 + 1, leap, 0);
-      wavelength(&lsmask, time, NLONMIN, NLONMAX + 1, nlatmin, nlat5 + 1, leap, 0);
-
-      divergence(&lsmask, NLONMIN, NLONMAX + 1, slat5, nlatmax + 1, leap, 1);
-      wavelength(&lsmask, time, NLONMIN, NLONMAX + 1, slat5, nlatmax + 1, leap, 1);
-
+    if (DBGFLG > 1) {
+      printf("main: get vertical velocities and horizotal wavelengths\n");
+      fflush(NULL);
     }
-  }
 
+    // get mid-point divergences on both hemispheres
+    if (NLATMIN == nlatmin) {
+      if ((LATMIN > 0) & (LATMAX > 0)) { // both on northern hemisphere
 
+        divergence(&lsmask, NLONMIN, NLONMAX + 1, nlatmin, nlatmax + 1, leap, 0);
+        wavelength(&lsmask, time, NLONMIN, NLONMAX + 1, nlatmin, nlatmax + 1, leap, 0);
 
-  // set struct for data time series
-  dat1d lh;
-  dat1d ww;
-  dat1d NN;
-  dat1d Eout;
-  lh.ntime = (365+leap)*24;
-  NN.ntime = ww.ntime = Eout.ntime = lh.ntime;
-  lh.time = dalloc(lh.time, (size_t) lh.ntime);
-  for (nn=0; nn < lh.ntime; nn++) lh.time[nn] = (double) time[nn + 31*24];
-  NN.time = ww.time = Eout.time = lh.time;
+      } else if ((LATMIN < 0) & (LATMAX < 0)) { // both on southern hemisphere
 
-  lh.data = dalloc(lh.data, (size_t) lh.ntime);
-  ww.data = dalloc(lh.data, (size_t) lh.ntime);
-  NN.data = dalloc(lh.data, (size_t) lh.ntime);
-  Eout.data = dalloc(lh.data, (size_t) lh.ntime);
+        divergence(&lsmask, NLONMIN, NLONMAX + 1, nlatmin, nlatmax + 1, leap, 1);
+        wavelength(&lsmask, time, NLONMIN, NLONMAX + 1, nlatmin, nlatmax + 1, leap, 1);
 
-  if (DBGFLG>1) {printf("main: begin loop over points\n");fflush(NULL);}
-  int nt;
-  // calculate hybrid model on all points
-  for (nn=nlatmin +1 ; nn<nlatmax; nn++){
-    for (mm=NLONMIN + 1; mm<NLONMAX; mm++){
+      } else if (LATMIN > -5) { // latitude minimum in forbidden band
 
-      if (lsmask.data[nn-1][mm] +
-          lsmask.data[nn+1][mm] +
-          lsmask.data[nn][mm-1] +
-          lsmask.data[nn][mm+1] +
-          lsmask.data[nn][mm] == 0.0) {
-        if (DBGFLG>1) { printf("    (%d, %d)\n", nn, mm); fflush(NULL);}
+        divergence(&lsmask, NLONMIN, NLONMAX + 1, nlat5, nlatmax + 1, leap, 0);
+        wavelength(&lsmask, time, NLONMIN, NLONMAX + 1, nlat5, nlatmax + 1, leap, 0);
 
+      } else if (LATMAX < 5) { // latitude maximum in forbidden band
 
-        // get data
-        getdataHybrid(&lsmask, &lh, &ww, &NN, nn, nlatmin, mm, NLONMIN, leap, nlat5, slat5);
+        divergence(&lsmask, NLONMIN, NLONMAX + 1, nlatmin, slat5 + 1, leap, 1);
+        wavelength(&lsmask, time, NLONMIN, NLONMAX + 1, nlatmin, slat5 + 1, leap, 1);
 
-        // set Coriolis frequency
-        f0 = coriolis(lsmask.lat[nn]);
+      } else { // general case with two valid hemispheres
 
-        // get energy flux for point
-        hybrid(&lh, &ww, &NN, &Eout, hfreqs, f0, HAUX, haux, hfft, hifft, leap);
+        divergence(&lsmask, NLONMIN, NLONMAX + 1, nlat5, nlatmax + 1, leap, 0);
+        wavelength(&lsmask, time, NLONMIN, NLONMAX + 1, nlat5, nlatmax + 1, leap, 0);
 
-        // save data to nc file
-        savePointHybrid(&lsmask, &Eout, nn, nlatmin, nlatmax, mm, NLONMIN, leap, nlat5, slat5);
+        divergence(&lsmask, NLONMIN, NLONMAX + 1, nlatmin, slat5 + 1, leap, 1);
+        wavelength(&lsmask, time, NLONMIN, NLONMAX + 1, nlatmin, slat5 + 1, leap, 1);
+
+      }
+    } else if (NLATMAX == nlatmin) {
+      if ((LATMIN > 0) & (LATMAX > 0)) { // both on northern hemisphere
+
+        divergence(&lsmask, NLONMIN, NLONMAX + 1, nlatmin, nlatmax + 1, leap, 0);
+        wavelength(&lsmask, time, NLONMIN, NLONMAX + 1, nlatmin, nlatmax + 1, leap, 0);
+
+      } else if ((LATMIN < 0) & (LATMAX < 0)) { // both on southern hemisphere
+
+        divergence(&lsmask, NLONMIN, NLONMAX + 1, nlatmin, nlatmax + 1, leap, 1);
+        wavelength(&lsmask, time, NLONMIN, NLONMAX + 1, nlatmin, nlatmax + 1, leap, 1);
+
+      } else if (LATMIN > -5) { // latitude minimum in forbidden band
+
+        divergence(&lsmask, NLONMIN, NLONMAX + 1, nlatmin, nlat5 + 1, leap, 0);
+        wavelength(&lsmask, time, NLONMIN, NLONMAX + 1, nlatmin, nlat5 + 1, leap, 0);
+
+      } else if (LATMAX < 5) { // latitude maximum in forbidden band
+
+        divergence(&lsmask, NLONMIN, NLONMAX + 1, slat5, nlatmax + 1, leap, 1);
+        wavelength(&lsmask, time, NLONMIN, NLONMAX + 1, slat5, nlatmax + 1, leap, 1);
+
+      } else { // general case with two valid hemispheres
+
+        divergence(&lsmask, NLONMIN, NLONMAX + 1, nlatmin, nlat5 + 1, leap, 0);
+        wavelength(&lsmask, time, NLONMIN, NLONMAX + 1, nlatmin, nlat5 + 1, leap, 0);
+
+        divergence(&lsmask, NLONMIN, NLONMAX + 1, slat5, nlatmax + 1, leap, 1);
+        wavelength(&lsmask, time, NLONMIN, NLONMAX + 1, slat5, nlatmax + 1, leap, 1);
+
       }
     }
+
+    // set struct for data time series
+    dat1d lh;
+    dat1d ww;
+    dat1d NN;
+    dat1d Eout;
+    lh.ntime = (365 + leap) * 24;
+    NN.ntime = ww.ntime = Eout.ntime = lh.ntime;
+    lh.time = dalloc(lh.time, (size_t) lh.ntime);
+    for (nn = 0; nn < lh.ntime; nn++) lh.time[nn] = (double) time[nn + 31 * 24];
+    NN.time = ww.time = Eout.time = lh.time;
+
+    lh.data = dalloc(lh.data, (size_t) lh.ntime);
+    ww.data = dalloc(lh.data, (size_t) lh.ntime);
+    NN.data = dalloc(lh.data, (size_t) lh.ntime);
+    Eout.data = dalloc(lh.data, (size_t) lh.ntime);
+
+    if (DBGFLG > 1) {
+      printf("main: begin loop over points\n");
+      fflush(NULL);
+    }
+    int nt;
+    // calculate hybrid model on all points
+    for (nn = nlatmin + 1; nn < nlatmax; nn++) {
+      for (mm = NLONMIN + 1; mm < NLONMAX; mm++) {
+
+        if (lsmask.data[nn - 1][mm] +
+            lsmask.data[nn + 1][mm] +
+            lsmask.data[nn][mm - 1] +
+            lsmask.data[nn][mm + 1] +
+            lsmask.data[nn][mm] == 0.0) {
+          if (DBGFLG > 1) {
+            printf("    (%d, %d)\n", nn, mm);
+            fflush(NULL);
+          }
+
+
+          // get data
+          getdataHybrid(&lsmask, &lh, &ww, &NN, nn, nlatmin, mm, NLONMIN, leap, nlat5, slat5);
+
+          // set Coriolis frequency
+          f0 = coriolis(lsmask.lat[nn]);
+
+          // get energy flux for point
+          hybrid(&lh, &ww, &NN, &Eout, hfreqs, f0, HAUX, haux, hfft, hifft, leap);
+
+          // save data to nc file
+          savePointHybrid(&lsmask, &Eout, nn, nlatmin, nlatmax, mm, NLONMIN, leap, nlat5, slat5);
+        }
+      }
+    }
+
+    // free up memory from hybrid extension
+    free(lh.data);
+    free(lh.time); // frees time axes of all data structs
+    free(NN.data);
+    free(ww.data);
+    free(Eout.data);
   }
 
   if (DBGFLG>2) {printf("main: clean up memory\n");fflush(NULL);}
@@ -336,11 +361,7 @@ int main(void) {
   dfree2(lsmask.data, (size_t) lsmask.nlat);
   free(damp.y1); // note tha damp.xx is free'd at lsmask.lat
   free(damp.y2);
-  free(lh.data);
-  free(lh.time); // frees time axes of all data structs
-  free(NN.data);
-  free(ww.data);
-  free(Eout.data);
+
 
   return(EXIT_SUCCESS);
 }

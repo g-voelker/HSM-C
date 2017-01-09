@@ -411,6 +411,7 @@ void savelh(dat2d *lsmask, double ***lh, int *time,
     // start iteration here
     for (ny=nymin; ny<nymax; ny++) {
       for (nx=nxmin; nx<nxmax; nx++) {
+        if (DBGFLG>2) {printf("    (%d, %d)\n", ny, nx); fflush(NULL);}
         // interpolate in time
         for (nt=0; nt<days[nmonth]*24; nt++) {
           // check position relative to monthly values

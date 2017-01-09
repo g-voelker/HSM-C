@@ -333,8 +333,7 @@ dat2d_2 initdamping(dat2d *lsmask){
   return(data);
 }
 
-void getdataHybrid(dat2d *lsmask, dat1d *lh, dat1d *ww, dat1d *NN,
-                   int ny, int nymin, int nx, int nxmin, int leap, int nlat5, int slat5){
+void getdataHybrid(dat2d *lsmask, dat1d *lh, dat1d *ww, dat1d *NN, int ny, int nymin, int nx, int nxmin, int leap, int nlat5, int slat5){
   // indices
   size_t days[12] = {31, 28 + (size_t) leap, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31};
   int nmonth, nt, nint;
@@ -425,24 +424,34 @@ void getdataHybrid(dat2d *lsmask, dat1d *lh, dat1d *ww, dat1d *NN,
     startIndex = sum(days, nmonth) * 24;
     count[0] = days[nmonth]*24;
 
-    // set filepath and data location according to datafiles written earlier
-    if (lsmask->lat[ny]>5) {
-      sprintf(filepath, OUTPATH_N, nmonth+1);
-      if (lsmask->lat[nymin] > lsmask->lat[nlat5]){
-        start[1] = (size_t) (ny-nymin);
-      } else if (lsmask->lat[nymin] <= lsmask->lat[nlat5]){
-        start[1] = (size_t) (ny-nlat5);
+    // set filepath to datafiles written earlier
+
+    if ((nlat5==NC_FILL_INT)|(slat5==NC_FILL_INT)) {
+      if (lsmask->lat[ny] > 0) {
+        sprintf(filepath, OUTPATH_N, nmonth+1);
+      } else if (lsmask->lat[ny] < 0) {
+        sprintf(filepath, OUTPATH_S, nmonth+1);
       }
-    } else if (lsmask->lat[ny]<-5) {
-      sprintf(filepath, OUTPATH_S, nmonth+1);
-      if (lsmask->lat[nymin] < lsmask->lat[slat5]){
-        start[1] = (size_t) (ny-nymin);
-      } else if (lsmask->lat[nymin] >= lsmask->lat[slat5]){
-        start[1] = (size_t) (ny-slat5);
-      }
+      start[1] = (size_t) (ny-nymin);
     } else {
-      // if lat of point is in forbidden latitude band throw an error
-      GENERR
+      if (lsmask->lat[ny] > lsmask->lat[nlat5]) {
+        sprintf(filepath, OUTPATH_N, nmonth + 1);
+        if (lsmask->lat[nymin] > lsmask->lat[nlat5]) {
+          start[1] = (size_t) (ny - nymin);
+        } else if (lsmask->lat[nymin] <= lsmask->lat[nlat5]) {
+          start[1] = (size_t) (ny - nlat5);
+        }
+      } else if (lsmask->lat[ny] < lsmask->lat[slat5]) {
+        sprintf(filepath, OUTPATH_S, nmonth + 1);
+        if (lsmask->lat[nymin] < lsmask->lat[slat5]) {
+          start[1] = (size_t) (ny - nymin);
+        } else if (lsmask->lat[nymin] >= lsmask->lat[slat5]) {
+          start[1] = (size_t) (ny - slat5);
+        }
+      } else {
+        // if lat of point is in forbidden latitude band throw an error
+        GENERR
+      }
     }
     start[2] = (size_t) (nx - nxmin);
 

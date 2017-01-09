@@ -113,7 +113,11 @@ void advancew(dat3d *ww, dat2d *lsmask,
     }
   }
 
-  if (DBGFLG>2) {printf("  advancew: advance vertical velocity field by one longitude\n");fflush(NULL);}
+  if (DBGFLG>2) {
+    printf("  advancew: advance vertical velocity field by one longitude\n    lon: %.2f\n", lsmask->lon[nlon]);
+    fflush(NULL);
+  }
+
   // load one slice of data
   // set file to load from
   if (hemflag == 0) { // norhtern hemisphere
@@ -147,17 +151,23 @@ void advancew(dat3d *ww, dat2d *lsmask,
   if ((retval = nc_inq_varid(ncID, ZVEL, &varID))) ERR(retval);
 
   // read arrays
+  mm = nlon + 2 * ndlon - 1;
+  // read slice
+  if (mm < 0) {
+    start[2] = (size_t) (lsmask->nlon + mm);
+  } else if (mm >= lsmask -> nlon) {
+    start[2] = (size_t) (mm - lsmask->nlon);
+  } else {
+    start[2] = (size_t) (mm-nlonmin);
+  }
+
   for (nn=nlatmin; nn<nlatmin + ww->nlat; nn++){
+//    if (nn==nlatmin) {
+//      printf("%d, %d, %d, %d, %d, %d\n",
+//             (int) start[0], (int) start[1], (int) start[2],
+//             (int) count[0], (int) count[1], (int) count[2]);
+//    }
     start[1] = (size_t) (nn - nlatmin);
-    mm = nlon + 2 * ndlon - 1;
-    // read slice
-    if (mm < 0) {
-      start[2] = (size_t) (lsmask->nlon + mm);
-    } else if (mm > lsmask -> nlon) {
-      start[2] = (size_t) (mm - lsmask->nlon);
-    } else {
-      start[2] = (size_t) (mm-nlonmin);
-    }
     if ((retval = nc_get_vara_double(ncID, varID, start, count, &(ww->data)[nn-nlatmin][mm - nlon][0])))
     ERR(retval);
   }
@@ -171,7 +181,7 @@ void autocorr(dat2d *lsmask, dat3d *ww, double ***distances, double **lh,
               int leap, int ndlat, int ndlon, int nmonth, int edgeflag) {
   // declare used variables
   size_t days[14] = {31, 31, 28 + (size_t) leap, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31, 31};
-  int nn, mm, nx, ny, nt, index, iterbounds[4], iternlon[2], itershift;
+  int nn, mm, maux, nx, ny, nt, index, iterbounds[4], iternlon[2], itershift;
   double *distance, *corr, *norm, avg, aux, Dist;
 
   distance = dalloc(distance, CORRLEN);
@@ -194,14 +204,18 @@ void autocorr(dat2d *lsmask, dat3d *ww, double ***distances, double **lh,
   }
 
   for (mm=iternlon[0]; mm<iternlon[1]; mm++) {
+
+    memcpy(&maux, &mm, sizeof(int));
+    if (maux >= lsmask->nlon) maux -= lsmask->nlon;
+
     for (nn = nlatmin; nn < nlatmin + ww->nlat; nn++) {
       // initialize wavelength with zero
-      lh[nn - nlatmin][mm - nlonmin] = 0.0;
+      lh[nn - nlatmin][maux - nlonmin] = 0.0;
       // boundaries for iteration over latitudes
       iterbounds[0] = (int) fmax(nn - ndlat, nlatmin);
       iterbounds[1] = (int) fmin(nn + ndlat, nlatmin + ww->nlat);
-      iterbounds[2] = (int) fmax(mm - ndlon, nlon);
-      iterbounds[3] = (int) fmin(mm + ndlon, nlon + ww->nlon);
+      iterbounds[2] = (int) fmax(maux - ndlon, nlon);
+      iterbounds[3] = (int) fmin(maux + ndlon, nlon + ww->nlon);
 
       // iterate over all time steps
       for (nt = 0; nt < days[nmonth]*24; nt++) {
@@ -215,8 +229,8 @@ void autocorr(dat2d *lsmask, dat3d *ww, double ***distances, double **lh,
           for (ny = iterbounds[0]; ny < iterbounds[1]; ny++) {
             for (nx = iterbounds[2]; nx < iterbounds[3]; nx++) {
               // check distance and get index
-              itershift = abs(mm - nlon - ndlon);
-              Dist = dist(lsmask->lon[mm - nlonmin], lsmask->lon[nx - nlonmin],
+//              itershift = abs(mm - nlon - ndlon);
+              Dist = dist(lsmask->lon[maux - nlonmin], lsmask->lon[nx - nlonmin],
                           lsmask->lat[nn - nlatmin], lsmask->lat[ny - nlatmin]);
 //              index = (int) (
 //                      (distances[nn - nlatmin][ny - iterbounds[0]][nx - nlon + itershift] - CORRMIN) / (CORRMAX - CORRMIN) *
@@ -234,10 +248,10 @@ void autocorr(dat2d *lsmask, dat3d *ww, double ***distances, double **lh,
         // normalize correlation with number of points in bin
         for (index = 0; index < CORRLEN; index++) corr[index] /= norm[index];
         // get wavelegth from correlation array of point and add result to lh[nn-nlatmin][nlon-nlonmin]
-        lh[nn - nlatmin][mm - nlonmin] += dxmax(distance, corr, CORRLEN);
+        lh[nn - nlatmin][maux - nlonmin] += dxmax(distance, corr, CORRLEN);
       }
       // normalize actual point in lh
-      lh[nn - nlatmin][mm - nlonmin] /= days[nmonth] * 24;
+      lh[nn - nlatmin][maux - nlonmin] /= days[nmonth] * 24;
     }
   }
 
