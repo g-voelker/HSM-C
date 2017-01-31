@@ -32,7 +32,7 @@ void divergence(dat2d *lsmask, int nxmin, int nxmax, int nymin, int nymax, int l
   size_t days[14] = {31, 31, 28 + (size_t) leap, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31, 31};
 
   // netcdf
-  int retval, ncID, varID[4], dimID[3];
+  int retval, ncID = 0, varID[4], dimID[3];
   size_t start[3], count[3], latlen, lonlen;
   char filepath[MAXCHARLEN];
   size_t chunksize[3] = {28*24, CHUNK_LAT, CHUNK_LON};
@@ -90,17 +90,20 @@ void divergence(dat2d *lsmask, int nxmin, int nxmax, int nymin, int nymax, int l
     // open netcdf file and read u, v, mld
     if ((retval = nc_open(filepath, NC_WRITE, &ncID))) ERR(retval);
 
+//    printf(".");
     // get variable IDs
     if ((retval = nc_inq_varid(ncID, XVEL, &varID[0]))) ERR(retval);
     if ((retval = nc_inq_varid(ncID, YVEL, &varID[1]))) ERR(retval);
     if ((retval = nc_inq_varid(ncID, MLD, &varID[2]))) ERR(retval);
     if ((retval = nc_inq_varid(ncID, ZVEL, &varID[3]))) ERR(retval);
 
+//    printf(".");
     // get dimension IDs
     if ((retval = nc_inq_dimid(ncID, TIME, &dimID[0]))) ERR(retval);
     if ((retval = nc_inq_dimid(ncID, LATS, &dimID[1]))) ERR(retval);
     if ((retval = nc_inq_dimid(ncID, LONS, &dimID[2]))) ERR(retval);
 
+//    printf(".");
     // check if there is at least 3x3 points
     if(nmonth==0){
       if((retval = nc_inq_dimlen(ncID, dimID[1], &latlen))) ERR(retval);

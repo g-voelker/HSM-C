@@ -217,21 +217,22 @@ void autocorr(dat2d *lsmask, dat3d *ww, double ***distances, double **lh,
       iterbounds[2] = (int) fmax(maux - ndlon, nlon);
       iterbounds[3] = (int) fmin(maux + ndlon, nlon + ww->nlon);
 
-      // iterate over all time steps
-      for (nt = 0; nt < days[nmonth]*24; nt++) {
-        // get average vertical velocity
-        avg = wavg2(lsmask, ww, nt, iterbounds[2], iterbounds[0]);
-        // set correlation array and norms to zero
-        for (index = 0; index < CORRLEN; index++) corr[index] = norm[index] = 0.0;
-        // iterate over lats and lons and add element to corresponding element in correlation array
-        // note that we neglect any factor constant at the point since we evaluate maxima only
-        if (ww->data[nn - nlatmin][mm - nlon][nt]!=NC_FILL_DOUBLE) {
+      if (lsmask->data[nn][maux] == 0.0) {
+        // iterate over all time steps
+        for (nt = 0; nt < days[nmonth]*24; nt++) {
+          // get average vertical velocity
+          avg = wavg2(lsmask, ww, nt, iterbounds[2], iterbounds[0]);
+          // set correlation array and norms to zero
+          for (index = 0; index < CORRLEN; index++) corr[index] = norm[index] = 0.0;
+          // iterate over lats and lons and add element to corresponding element in correlation array
+          // note that we neglect any factor constant at the point since we evaluate maxima only
+
           for (ny = iterbounds[0]; ny < iterbounds[1]; ny++) {
             for (nx = iterbounds[2]; nx < iterbounds[3]; nx++) {
               // check distance and get index
 //              itershift = abs(mm - nlon - ndlon);
-              Dist = dist(lsmask->lon[maux - nlonmin], lsmask->lon[nx - nlonmin],
-                          lsmask->lat[nn - nlatmin], lsmask->lat[ny - nlatmin]);
+              Dist = dist(lsmask->lon[maux], lsmask->lon[nx],
+                          lsmask->lat[nn], lsmask->lat[ny]);
 //              index = (int) (
 //                      (distances[nn - nlatmin][ny - iterbounds[0]][nx - nlon + itershift] - CORRMIN) / (CORRMAX - CORRMIN) *
 //                      CORRLEN + 0.5);
@@ -244,14 +245,16 @@ void autocorr(dat2d *lsmask, dat3d *ww, double ***distances, double **lh,
               }
             }
           }
+          // normalize correlation with number of points in bin
+          // get wavelegth from correlation array of point and add result to lh[nn-nlatmin][nlon-nlonmin]
+          for (index = 0; index < CORRLEN; index++) corr[index] /= norm[index];
+          lh[nn - nlatmin][maux - nlonmin] += dxmax(distance, corr, CORRLEN);
         }
-        // normalize correlation with number of points in bin
-        for (index = 0; index < CORRLEN; index++) corr[index] /= norm[index];
-        // get wavelegth from correlation array of point and add result to lh[nn-nlatmin][nlon-nlonmin]
-        lh[nn - nlatmin][maux - nlonmin] += dxmax(distance, corr, CORRLEN);
+        // normalize actual point in lh
+        lh[nn - nlatmin][maux - nlonmin] /= days[nmonth] * 24;
+      } else {
+        lh[nn - nlatmin][maux - nlonmin] = NC_FILL_DOUBLE;
       }
-      // normalize actual point in lh
-      lh[nn - nlatmin][maux - nlonmin] /= days[nmonth] * 24;
     }
   }
 
@@ -306,35 +309,46 @@ void wavelength(dat2d *lsmask, int *time, int nxmin, int nxmax, int nymin, int n
   for (nmonth=0; nmonth<14; nmonth++) {
     ntime = days[nmonth] * 24;
 
-    // init vertical velocity
-    ww.data = dalloc3(ww.data, (size_t) nlat, (size_t) 2*ndlon, ntime);
-    ww.nlat = nlat;
-    ww.nlon = 2*ndlon;
-    ww.nt = (int) ntime;
+    if (ACFLG==1){ // only run autocorrelation if corresponding flag is set to 1
+      // init vertical velocity
+      ww.data = dalloc3(ww.data, (size_t) nlat, (size_t) 2*ndlon, ntime);
+      ww.nlat = nlat;
+      ww.nlon = 2*ndlon;
+      ww.nt = (int) ntime;
 
-    // init lh with zeros
-    for (nn=0; nn<nlat; nn++){
-      for (mm=0; mm<nxmax-nxmin; mm++){
-        lh[nmonth][nn][mm] = 0.0;
+      // init lh with zeros
+      for (nn=0; nn<nlat; nn++){
+        for (mm=0; mm<nxmax-nxmin; mm++){
+          lh[nmonth][nn][mm] = 0.0;
+        }
+      }
+
+      // iterate over longitudes (+ handle edges of domains)
+      for (mm=nxmin; mm < itermax; mm++){
+        // load vertical velocity band
+        int nyy, mxx;
+        if (mm==nxmin){
+          loadw(&ww, lsmask, nymin, nxmin, mm, ndlon, nmonth, leap, hemflag);
+        } else {
+          advancew(&ww, lsmask, nymin, nxmin, mm, ndlon, nmonth, leap, hemflag);
+        }
+
+        // do calculation on band (either over half band or just over one column dependeing on edgeflag)
+        autocorr(lsmask, &ww, distances, lh[nmonth], mm, nxmin, nxmax, nymin, leap, ndlat, ndlon, nmonth, edgeflag);
+      }
+
+      // free vertical velocity
+      dfree3(ww.data, (size_t) nlat, (size_t) 2*ndlon);
+
+    } else { // if flag does not permit autocorrelation set wavelength to constant value
+      for (nn=0; nn<nlat; nn++){
+        for (mm=0; mm<nxmax-nxmin; mm++){
+          lh[nmonth][nn][mm] = WLNGTH;
+        }
       }
     }
 
-    // iterate over longitudes (+ handle edges of domains)
-    for (mm=nxmin; mm < itermax; mm++){
-      // load vertical velocity band
-      int nyy, mxx;
-      if (mm==nxmin){
-        loadw(&ww, lsmask, nymin, nxmin, mm, ndlon, nmonth, leap, hemflag);
-      } else {
-        advancew(&ww, lsmask, nymin, nxmin, mm, ndlon, nmonth, leap, hemflag);
-      }
 
-      // do calculation on band (either over half band or just over one column dependeing on edgeflag)
-      autocorr(lsmask, &ww, distances, lh[nmonth], mm, nxmin, nxmax, nymin, leap, ndlat, ndlon, nmonth, edgeflag);
-    }
-
-    // free vertical velocity
-    dfree3(ww.data, (size_t) nlat, (size_t) 2*ndlon);
   }
 
   // interpolate lh and save to netcdf file

@@ -3,6 +3,8 @@
 #include <math.h>
 #include <time.h>
 #include <fftw3.h>
+#include <netcdf.h>
+#include <string.h>
 #include "../lib/constants.h"
 #include "../lib/dalloc.h"
 #include "../lib/structs.h"
@@ -16,6 +18,7 @@
 #include "divergence.h"
 #include "wavelength.h"
 #include "hybrid.h"
+#include "../lib/macros.h"
 
 int main(void) {
   if (DBGFLG > 2) {
@@ -29,7 +32,7 @@ int main(void) {
   double rho0 = RHO, r0, f0;
 
   // subsetting related variables
-  int NLATMIN, NLATMAX, nlatmin, nlatmax, NLONMIN, NLONMAX, nlat5=0, slat5=0, hemflag;
+  int NLATMIN, NLATMAX, nlatmin, nlatmax, NLONMIN, NLONMAX, nlat5=NC_FILL_INT, slat5=NC_FILL_INT, hemflag;
   double minimum, maximum;
 
   // time loop related variables
@@ -162,11 +165,37 @@ int main(void) {
   hfft = fftw_plan_dft_1d(((365 + leap) * 24), haux, HAUX, FFTW_FORWARD, FFTW_ESTIMATE);
   hifft = fftw_plan_dft_1d(((365 + leap) * 24), HAUX, haux, FFTW_BACKWARD, FFTW_ESTIMATE);
 
-  if (DBGFLG>2) {printf("main: init data files\n"); fflush(NULL);}
 
   // be aware that the lat array may be sorted inversely
   if (SLABFLG==1) { // init nc files only if slab model is supposed to run.
+    if (DBGFLG>2) {printf("main: init data files\n"); fflush(NULL);}
     initnc(&lsmask, time, NLONMIN, NLONMAX + 1, nlatmin, nlatmax + 1, leap, &nlat5, &slat5);
+  } else if (SLABFLG==0) { // only load nlat5 and slat5; data should already be written.
+    // set nlat5 and slat5
+    for (nn=nlatmin; nn<nlatmax; nn++){
+      if (dabs(lsmask.lat[nn]) < 5) break;
+    }
+
+    if (lsmask.lat[nn] > 0){
+      memcpy(&nlat5, &nn, sizeof(int));
+    } else {
+      memcpy(&slat5, &nn, sizeof(int));
+    }
+
+    for (nn=nlatmax; nn>nlatmin; nn--){
+      if (dabs(lsmask.lat[nn]) < 5) break;
+    }
+
+    if (lsmask.lat[nn] > 0){
+      memcpy(&nlat5, &nn, sizeof(int));
+    } else {
+      memcpy(&slat5, &nn, sizeof(int));
+    }
+
+    // if nlat5 and slat5 did not receive a value throw an error
+    if ((nlat5==NC_FILL_INT)&(slat5==NC_FILL_INT)){
+      GENERR
+    }
   }
 
   dat2d_2 damp = initdamping(&lsmask);
