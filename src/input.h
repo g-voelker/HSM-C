@@ -8,18 +8,18 @@
 #define WLNGTH 400e3
 
 // bounding box
-#define LATMIN -65
-#define LATMAX 65
+#define LATMIN -10
+#define LATMAX 10
 #define LONMIN 0
 #define LONMAX 360
 
 // flags
 // debug flag
-#define DBGFLG 2
+#define DBGFLG 3
 // stress correction flag
 #define STRSCOR 1
 // run the slab model
-#define SLABFLG 1
+#define SLABFLG 0
 // run the hybrid extension
 #define HYBRIDFLG 1
 // atocorrelation flag
@@ -37,10 +37,10 @@
 //#define AUXPATH_N "/run/media/georg/TRANSCEND/EIS2/results/eis3_test/test_aux_n_%02d.nc"
 //#define AUXPATH_S "/run/media/georg/TRANSCEND/EIS2/results/eis3_test/test_aux_s_%02d.nc"
 
-#define OUTPATH_N "/run/media/georg/4TB-ext/hybrid/eis3c_test/test_const_n_%02d.nc"
-#define AUXPATH_N "/run/media/georg/4TB-ext/hybrid/eis3c_test/test_const_aux_n_%02d.nc"
-#define OUTPATH_S "/run/media/georg/4TB-ext/hybrid/eis3c_test/test_const_s_%02d.nc"
-#define AUXPATH_S "/run/media/georg/4TB-ext/hybrid/eis3c_test/test_const_aux_s_%02d.nc"
+#define OUTPATH_N "/run/media/georg/4TB-ext/hybrid/eis3c_test/test_sym_n_%02d.nc"
+#define AUXPATH_N "/run/media/georg/4TB-ext/hybrid/eis3c_test/test_sym_aux_n_%02d.nc"
+#define OUTPATH_S "/run/media/georg/4TB-ext/hybrid/eis3c_test/test_sym_s_%02d.nc"
+#define AUXPATH_S "/run/media/georg/4TB-ext/hybrid/eis3c_test/test_sym_aux_s_%02d.nc"
 
 //#define MLDPATH "/run/media/georg/TRANSCEND/EIS2/MIMOC/MIMOC_ML_v2.2_CT_SA_MLP_month%02d_regrid.nc"
 //#define MLDPATH "/cygdrive/e/Data/MIMOC/MIMOC_ML_v2.2_CT_SA_MLP_month%02d_regrid.nc"

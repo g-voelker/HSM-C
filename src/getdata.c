@@ -464,10 +464,18 @@ void getdataHybrid(dat2d *lsmask, dat1d *lh, dat1d *ww, dat1d *NN, int ny, int n
 
     // get variable
     if ((retval = nc_get_vara_double(ncID, varID[0], start, count, &ww->data[startIndex]))) ERR(retval);
-    if ((retval = nc_get_vara_double(ncID, varID[1], start, count, &lh->data[startIndex]))) ERR(retval);
+    if (ACFLG==1) {
+      if ((retval = nc_get_vara_double(ncID, varID[1], start, count, &lh->data[startIndex]))) ERR(retval);
+    }
 
     // close file
     if ((retval = nc_close(ncID))) ERR(retval);
+  }
+
+  if (ACFLG!=1) {
+    for (nt=0; nt<lh->ntime; nt++){
+      lh->data[nt] = WLNGTH;
+    }
   }
 
   free(aux);

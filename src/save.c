@@ -409,8 +409,8 @@ void savelh(dat2d *lsmask, double ***lh, int *time,
     if ((retval = nc_inq_varid(ncID, LH, &varID))) ERR(retval);
 
     // start iteration here
-    for (ny=nymin; ny<nymax; ny++) {
-      for (nx=nxmin; nx<nxmax; nx++) {
+    for (ny=nymin+1; ny<nymax-1; ny++) {
+      for (nx=nxmin+1; nx<nxmax-1; nx++) {
         if (DBGFLG>2) {printf("    (%d, %d)\n", ny, nx); fflush(NULL);}
         // interpolate in time
         for (nt=0; nt<days[nmonth]*24; nt++) {

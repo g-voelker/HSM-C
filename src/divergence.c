@@ -90,20 +90,17 @@ void divergence(dat2d *lsmask, int nxmin, int nxmax, int nymin, int nymax, int l
     // open netcdf file and read u, v, mld
     if ((retval = nc_open(filepath, NC_WRITE, &ncID))) ERR(retval);
 
-//    printf(".");
     // get variable IDs
     if ((retval = nc_inq_varid(ncID, XVEL, &varID[0]))) ERR(retval);
     if ((retval = nc_inq_varid(ncID, YVEL, &varID[1]))) ERR(retval);
     if ((retval = nc_inq_varid(ncID, MLD, &varID[2]))) ERR(retval);
     if ((retval = nc_inq_varid(ncID, ZVEL, &varID[3]))) ERR(retval);
 
-//    printf(".");
     // get dimension IDs
     if ((retval = nc_inq_dimid(ncID, TIME, &dimID[0]))) ERR(retval);
     if ((retval = nc_inq_dimid(ncID, LATS, &dimID[1]))) ERR(retval);
     if ((retval = nc_inq_dimid(ncID, LONS, &dimID[2]))) ERR(retval);
 
-//    printf(".");
     // check if there is at least 3x3 points
     if(nmonth==0){
       if((retval = nc_inq_dimlen(ncID, dimID[1], &latlen))) ERR(retval);
@@ -114,8 +111,11 @@ void divergence(dat2d *lsmask, int nxmin, int nxmax, int nymin, int nymax, int l
     }
 
     // iterate over lats and lons
+    printf("nmonth: %d\n", nmonth);fflush(NULL);
     for (nn = nymin+1; nn < nymax-1; nn++){
+//      printf("nlat: %d\n", nn);fflush(NULL);
       for (mm = nxmin+1; mm < nxmax-1; mm++){
+//        if (nn==271) printf("nlon: %d\n", mm);fflush(NULL);
         if (lsmask->data[nn-1][mm] +
             lsmask->data[nn+1][mm] +
             lsmask->data[nn][mm-1] +

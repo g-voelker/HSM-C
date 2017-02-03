@@ -26,12 +26,12 @@ void hybrid(dat1d *lh, dat1d *ww, dat1d *NN, dat1d *Eout, double *freqs, double 
   // set up window
   window = dalloc(window, (size_t)  ((365 + leap) * 24));
   for (nt=0; nt< ((365 + leap) * 24); nt++){
-    if ((dabs(freqs[nt])<=f0)|(dabs(freqs[nt])>=avgN)) {
+    if ((dabs(freqs[nt])<=dabs(f0))|(dabs(freqs[nt])>=avgN)) {
       window[nt] = 0.0;
     } else {
       window[nt] = sqrt(sqrt(sqr(avgN) - sqr(freqs[nt])) *
                         sqrt(sqr(freqs[nt]) - sqr(f0)) /
-                        dabs(freqs[nt]) / (avgN-f0));
+                        dabs(freqs[nt]) / (avgN-dabs(f0)));
     }
   }
 
@@ -41,11 +41,12 @@ void hybrid(dat1d *lh, dat1d *ww, dat1d *NN, dat1d *Eout, double *freqs, double 
   for (nt=0; nt<(365 + leap) * 24; nt++) {
     aux[nt][0] = ww->data[nt];
     aux[nt][1] = 0.0;
+    AUX[nt][0] = AUX[nt][1] = 0.0;
   }
-  for (nt=(365+leap)*24; nt< ((365 + leap) * 24); nt++){
-    aux[nt][0] = 0.0;
-    aux[nt][1] = 0.0;
-  }
+//  for (nt=(365+leap)*24; nt< ((365 + leap) * 24); nt++){ // only needed if zero padded FFT is used
+//    aux[nt][0] = 0.0;
+//    aux[nt][1] = 0.0;
+//  }
 
   // transform in time
   fftw_execute(fft);
@@ -66,7 +67,7 @@ void hybrid(dat1d *lh, dat1d *ww, dat1d *NN, dat1d *Eout, double *freqs, double 
 
   for (nt = 0; nt < (365 + leap) * 24; nt++) {
     Eout->data[nt] =
-            RHO * (NN->data[nt] - f0) * lh->data[nt] / PI2 * (aux[nt][0] * aux[nt][0] + aux[nt][1] * aux[nt][1]);
+            RHO * (NN->data[nt] - dabs(f0)) * lh->data[nt] / PI2 * (aux[nt][0] * aux[nt][0] + aux[nt][1] * aux[nt][1]);
   }
 
   if (DBGFLG > 2) {

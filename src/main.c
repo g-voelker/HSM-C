@@ -280,10 +280,14 @@ int main(void) {
       } else { // general case with two valid hemispheres
 
         divergence(&lsmask, NLONMIN, NLONMAX + 1, nlat5, nlatmax + 1, leap, 0);
-        wavelength(&lsmask, time, NLONMIN, NLONMAX + 1, nlat5, nlatmax + 1, leap, 0);
+        if (ACFLG==1) {
+          wavelength(&lsmask, time, NLONMIN, NLONMAX + 1, nlat5, nlatmax + 1, leap, 0);
+        }
 
         divergence(&lsmask, NLONMIN, NLONMAX + 1, nlatmin, slat5 + 1, leap, 1);
-        wavelength(&lsmask, time, NLONMIN, NLONMAX + 1, nlatmin, slat5 + 1, leap, 1);
+        if (ACFLG==1) {
+          wavelength(&lsmask, time, NLONMIN, NLONMAX + 1, nlatmin, slat5 + 1, leap, 1);
+        }
 
       }
     } else if (NLATMAX == nlatmin) {
@@ -310,10 +314,14 @@ int main(void) {
       } else { // general case with two valid hemispheres
 
         divergence(&lsmask, NLONMIN, NLONMAX + 1, nlatmin, nlat5 + 1, leap, 0);
-        wavelength(&lsmask, time, NLONMIN, NLONMAX + 1, nlatmin, nlat5 + 1, leap, 0);
+        if (ACFLG==1) {
+          wavelength(&lsmask, time, NLONMIN, NLONMAX + 1, nlatmin, nlat5 + 1, leap, 0);
+        }
 
         divergence(&lsmask, NLONMIN, NLONMAX + 1, slat5, nlatmax + 1, leap, 1);
-        wavelength(&lsmask, time, NLONMIN, NLONMAX + 1, slat5, nlatmax + 1, leap, 1);
+        if (ACFLG==1) {
+          wavelength(&lsmask, time, NLONMIN, NLONMAX + 1, slat5, nlatmax + 1, leap, 1);
+        }
 
       }
     }
@@ -356,6 +364,11 @@ int main(void) {
 
           // get data
           getdataHybrid(&lsmask, &lh, &ww, &NN, nn, nlatmin, mm, NLONMIN, leap, nlat5, slat5);
+
+          if (lsmask.lat[nn]<-5){
+            // this is a debugging test
+            printf("southern hemisphere, data test");fflush(NULL);
+          }
 
           // set Coriolis frequency
           f0 = coriolis(lsmask.lat[nn]);
