@@ -8,8 +8,8 @@
 #define WLNGTH 400e3
 
 // bounding box
-#define LATMIN -20
-#define LATMAX 20
+#define LATMIN -65
+#define LATMAX 65
 #define LONMIN 0
 #define LONMAX 360
 
@@ -43,10 +43,10 @@
 //#define OUTPATH_S "/run/media/georg/4TB-ext/hybrid/eis3c_test/test_sym_20_s_%02d.nc"
 //#define AUXPATH_S "/run/media/georg/4TB-ext/hybrid/eis3c_test/test_sym_20_aux_s_%02d.nc"
 
-#define OUTPATH_N "../results/test_sym_20_n_%02d.nc"
-#define AUXPATH_N "../results/test_sym_20_aux_n_%02d.nc"
-#define OUTPATH_S "../results/test_sym_20_s_%02d.nc"
-#define AUXPATH_S "../results/test_sym_20_aux_s_%02d.nc"
+#define OUTPATH_N "../results/%d_%02d_n.nc"
+#define AUXPATH_N "../results/%d_%02d_aux_n.nc"
+#define OUTPATH_S "../results/%d_%02d_s.nc"
+#define AUXPATH_S "../results/%d_%02d_aux_s.nc"
 
 //#define MLDPATH "/run/media/georg/TRANSCEND/EIS2/MIMOC/MIMOC_ML_v2.2_CT_SA_MLP_month%02d_regrid.nc"
 //#define MLDPATH "/cygdrive/e/Data/MIMOC/MIMOC_ML_v2.2_CT_SA_MLP_month%02d_regrid.nc"

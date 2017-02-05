@@ -69,19 +69,19 @@ void divergence(dat2d *lsmask, int nxmin, int nxmax, int nymin, int nymax, int l
     // note: the order of computation doesn't matter here
     if (hemflag==0) { // northern hemisphere
       if (nmonth == 0) {
-        sprintf(filepath, AUXPATH_N, 1);
+        sprintf(filepath, AUXPATH_N, YEAR,  1);
       } else if (nmonth == 13) {
-        sprintf(filepath, AUXPATH_N, 12);
+        sprintf(filepath, AUXPATH_N, YEAR, 12);
       } else {
-        sprintf(filepath, OUTPATH_N, nmonth);
+        sprintf(filepath, OUTPATH_N, YEAR, nmonth);
       }
     } else if (hemflag==1) { // southern hemisphere
       if (nmonth == 0) {
-        sprintf(filepath, AUXPATH_S, 1);
+        sprintf(filepath, AUXPATH_S, YEAR, 1);
       } else if (nmonth == 13) {
-        sprintf(filepath, AUXPATH_S, 12);
+        sprintf(filepath, AUXPATH_S, YEAR, 12);
       } else {
-        sprintf(filepath, OUTPATH_S, nmonth);
+        sprintf(filepath, OUTPATH_S, YEAR, nmonth);
       }
     } else { // if on no known hemisphere throw error
       GENERR

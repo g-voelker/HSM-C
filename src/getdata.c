@@ -428,21 +428,21 @@ void getdataHybrid(dat2d *lsmask, dat1d *lh, dat1d *ww, dat1d *NN, int ny, int n
 
     if ((nlat5==NC_FILL_INT)|(slat5==NC_FILL_INT)) {
       if (lsmask->lat[ny] > 0) {
-        sprintf(filepath, OUTPATH_N, nmonth+1);
+        sprintf(filepath, OUTPATH_N, YEAR, nmonth+1);
       } else if (lsmask->lat[ny] < 0) {
-        sprintf(filepath, OUTPATH_S, nmonth+1);
+        sprintf(filepath, OUTPATH_S, YEAR, nmonth+1);
       }
       start[1] = (size_t) (ny-nymin);
     } else {
       if (lsmask->lat[ny] > lsmask->lat[nlat5]) {
-        sprintf(filepath, OUTPATH_N, nmonth + 1);
+        sprintf(filepath, OUTPATH_N, YEAR, nmonth + 1);
         if (lsmask->lat[nymin] > lsmask->lat[nlat5]) {
           start[1] = (size_t) (ny - nymin);
         } else if (lsmask->lat[nymin] <= lsmask->lat[nlat5]) {
           start[1] = (size_t) (ny - nlat5);
         }
       } else if (lsmask->lat[ny] < lsmask->lat[slat5]) {
-        sprintf(filepath, OUTPATH_S, nmonth + 1);
+        sprintf(filepath, OUTPATH_S, YEAR, nmonth + 1);
         if (lsmask->lat[nymin] < lsmask->lat[slat5]) {
           start[1] = (size_t) (ny - nymin);
         } else if (lsmask->lat[nymin] >= lsmask->lat[slat5]) {

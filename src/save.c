@@ -50,19 +50,19 @@ void initnc_write(dat2d *lsmask, int* time, int nxmin, int nxmax, int nymin, int
     // set filename
     if (splitflag==0) {
       if (nn == 0) {
-        sprintf(filepath, AUXPATH_N, 1);
+        sprintf(filepath, AUXPATH_N, YEAR, 1);
       } else if (nn == 13) {
-        sprintf(filepath, AUXPATH_N, 12);
+        sprintf(filepath, AUXPATH_N, YEAR, 12);
       } else {
-        sprintf(filepath, OUTPATH_N, nn);
+        sprintf(filepath, OUTPATH_N, YEAR, nn);
       }
     } else if (splitflag==1) {
       if (nn == 0) {
-        sprintf(filepath, AUXPATH_S, 1);
+        sprintf(filepath, AUXPATH_S, YEAR, 1);
       } else if (nn == 13) {
-        sprintf(filepath, AUXPATH_S, 12);
+        sprintf(filepath, AUXPATH_S, YEAR, 12);
       } else {
-        sprintf(filepath, OUTPATH_S, nn);
+        sprintf(filepath, OUTPATH_S, YEAR, nn);
       }
     }
     // created the file with unlimited dimension
@@ -272,19 +272,19 @@ void savePoint(dat2d *lsmask, double* uu, double* vv, double* mld, double* taux,
     // set filepath depending on hemisphere
     if (lsmask->lat[ny]>5) {
       if (nn == 0) {
-        sprintf(filepath, AUXPATH_N, 1);
+        sprintf(filepath, AUXPATH_N, YEAR, 1);
       } else if (nn == 13) {
-        sprintf(filepath, AUXPATH_N, 12);
+        sprintf(filepath, AUXPATH_N, YEAR, 12);
       } else {
-        sprintf(filepath, OUTPATH_N, nn);
+        sprintf(filepath, OUTPATH_N, YEAR, nn);
       }
     } else if (lsmask->lat[ny]<-5) {
       if (nn == 0) {
-        sprintf(filepath, AUXPATH_S, 1);
+        sprintf(filepath, AUXPATH_S, YEAR, 1);
       } else if (nn == 13) {
-        sprintf(filepath, AUXPATH_S, 12);
+        sprintf(filepath, AUXPATH_S, YEAR, 12);
       } else {
-        sprintf(filepath, OUTPATH_S, nn);
+        sprintf(filepath, OUTPATH_S, YEAR, nn);
       }
     }
 
@@ -395,9 +395,9 @@ void savelh(dat2d *lsmask, double ***lh, int *time,
 
     // set filepath as above
     if (hemflag==0) {
-      sprintf(filepath, OUTPATH_N, nmonth+1);
+      sprintf(filepath, OUTPATH_N, YEAR, nmonth+1);
     } else if (hemflag==1) {
-      sprintf(filepath, OUTPATH_S, nmonth+1);
+      sprintf(filepath, OUTPATH_S, YEAR, nmonth+1);
     }
 
     // set hyperslab indicees
@@ -468,9 +468,9 @@ void savePointHybrid(dat2d *lsmask, dat1d *Eout, int ny, int nymin, int nymax, i
 
     // set filepath as above
     if (lsmask->lat[ny]>5) {
-      sprintf(filepath, OUTPATH_N, nmonth+1);
+      sprintf(filepath, OUTPATH_N, YEAR, nmonth+1);
     } else if (lsmask->lat[ny]<-5) {
-      sprintf(filepath, OUTPATH_S, nmonth+1);
+      sprintf(filepath, OUTPATH_S, YEAR, nmonth+1);
     } else {
       // if lat of point is in forbidden latitude band throw an error
       GENERR
