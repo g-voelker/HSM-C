@@ -122,24 +122,24 @@ void advancew(dat3d *ww, dat2d *lsmask,
   // set file to load from
   if (hemflag == 0) { // norhtern hemisphere
     if (nmonth == 0) {
-      sprintf(filepath, AUXPATH_N, 1);
+      sprintf(filepath, AUXPATH_N, YEAR, 1);
       count[0] = days[0] * 24;
     } else if (nmonth == 13) {
-      sprintf(filepath, AUXPATH_N, 12);
+      sprintf(filepath, AUXPATH_N, YEAR, 12);
       count[0] = days[11] * 24;
     } else {
-      sprintf(filepath, OUTPATH_N, nmonth);
+      sprintf(filepath, OUTPATH_N, YEAR, nmonth);
       count[0] = days[nmonth - 1] * 24;
     }
   } else if (hemflag == 1) { // southern hemisphere
     if (nmonth == 0) {
-      sprintf(filepath, AUXPATH_S, 1);
+      sprintf(filepath, AUXPATH_S, YEAR, 1);
       count[0] = days[0] * 24;
     } else if (nmonth == 13) {
-      sprintf(filepath, AUXPATH_S, 12);
+      sprintf(filepath, AUXPATH_S, YEAR, 12);
       count[0] = days[11] * 24;
     } else {
-      sprintf(filepath, OUTPATH_S, nmonth);
+      sprintf(filepath, OUTPATH_S, YEAR, nmonth);
       count[0] = days[nmonth - 1] * 24;
     }
   }
