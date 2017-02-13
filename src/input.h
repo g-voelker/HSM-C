@@ -19,8 +19,9 @@
 // stress correction flag
 #define STRSCOR 1
 // run the slab model
-
-#define SLABFLG 1
+#define SLABFLG 0
+// run calculation of vertical velocities
+#define DIVFLG 0
 // run the hybrid extension
 #define HYBRIDFLG 1
 // atocorrelation flag

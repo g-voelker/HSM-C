@@ -70,6 +70,8 @@ void hybrid(dat1d *lh, dat1d *ww, dat1d *NN, dat1d *Eout, double *freqs, double 
             RHO * (NN->data[nt] - dabs(f0)) * lh->data[nt] / PI2 * (aux[nt][0] * aux[nt][0] + aux[nt][1] * aux[nt][1]);
   }
 
+  free(window);
+
   if (DBGFLG > 2) {
     printf("  hybrid: return to main\n");
     fflush(NULL);

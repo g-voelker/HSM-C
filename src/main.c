@@ -259,69 +259,61 @@ int main(void) {
     if (NLATMIN == nlatmin) {
       if ((LATMIN > 0) & (LATMAX > 0)) { // both on northern hemisphere
 
-        divergence(&lsmask, NLONMIN, NLONMAX + 1, nlatmin, nlatmax + 1, leap, 0);
-        wavelength(&lsmask, time, NLONMIN, NLONMAX + 1, nlatmin, nlatmax + 1, leap, 0);
+        if (DIVFLG==1) divergence(&lsmask, NLONMIN, NLONMAX + 1, nlatmin, nlatmax + 1, leap, 0);
+        if (ACFLG==1) wavelength(&lsmask, time, NLONMIN, NLONMAX + 1, nlatmin, nlatmax + 1, leap, 0);
 
       } else if ((LATMIN < 0) & (LATMAX < 0)) { // both on southern hemisphere
 
-        divergence(&lsmask, NLONMIN, NLONMAX + 1, nlatmin, nlatmax + 1, leap, 1);
-        wavelength(&lsmask, time, NLONMIN, NLONMAX + 1, nlatmin, nlatmax + 1, leap, 1);
+        if (DIVFLG==1) divergence(&lsmask, NLONMIN, NLONMAX + 1, nlatmin, nlatmax + 1, leap, 1);
+        if (ACFLG==1) wavelength(&lsmask, time, NLONMIN, NLONMAX + 1, nlatmin, nlatmax + 1, leap, 1);
 
       } else if (LATMIN > -5) { // latitude minimum in forbidden band
 
-        divergence(&lsmask, NLONMIN, NLONMAX + 1, nlat5, nlatmax + 1, leap, 0);
-        wavelength(&lsmask, time, NLONMIN, NLONMAX + 1, nlat5, nlatmax + 1, leap, 0);
+        if (DIVFLG==1) divergence(&lsmask, NLONMIN, NLONMAX + 1, nlat5, nlatmax + 1, leap, 0);
+        if (ACFLG==1) wavelength(&lsmask, time, NLONMIN, NLONMAX + 1, nlat5, nlatmax + 1, leap, 0);
 
       } else if (LATMAX < 5) { // latitude maximum in forbidden band
 
-        divergence(&lsmask, NLONMIN, NLONMAX + 1, nlatmin, slat5 + 1, leap, 1);
-        wavelength(&lsmask, time, NLONMIN, NLONMAX + 1, nlatmin, slat5 + 1, leap, 1);
+        if (DIVFLG==1) divergence(&lsmask, NLONMIN, NLONMAX + 1, nlatmin, slat5 + 1, leap, 1);
+        if (ACFLG==1) wavelength(&lsmask, time, NLONMIN, NLONMAX + 1, nlatmin, slat5 + 1, leap, 1);
 
       } else { // general case with two valid hemispheres
 
-        divergence(&lsmask, NLONMIN, NLONMAX + 1, nlat5, nlatmax + 1, leap, 0);
-        if (ACFLG==1) {
-          wavelength(&lsmask, time, NLONMIN, NLONMAX + 1, nlat5, nlatmax + 1, leap, 0);
-        }
+        if (DIVFLG==1) divergence(&lsmask, NLONMIN, NLONMAX + 1, nlat5, nlatmax + 1, leap, 0);
+        if (ACFLG==1) wavelength(&lsmask, time, NLONMIN, NLONMAX + 1, nlat5, nlatmax + 1, leap, 0);
 
-        divergence(&lsmask, NLONMIN, NLONMAX + 1, nlatmin, slat5 + 1, leap, 1);
-        if (ACFLG==1) {
-          wavelength(&lsmask, time, NLONMIN, NLONMAX + 1, nlatmin, slat5 + 1, leap, 1);
-        }
+        if (DIVFLG==1) divergence(&lsmask, NLONMIN, NLONMAX + 1, nlatmin, slat5 + 1, leap, 1);
+        if (ACFLG==1) wavelength(&lsmask, time, NLONMIN, NLONMAX + 1, nlatmin, slat5 + 1, leap, 1);
 
       }
     } else if (NLATMAX == nlatmin) {
       if ((LATMIN > 0) & (LATMAX > 0)) { // both on northern hemisphere
 
-        divergence(&lsmask, NLONMIN, NLONMAX + 1, nlatmin, nlatmax + 1, leap, 0);
-        wavelength(&lsmask, time, NLONMIN, NLONMAX + 1, nlatmin, nlatmax + 1, leap, 0);
+        if (DIVFLG==1) divergence(&lsmask, NLONMIN, NLONMAX + 1, nlatmin, nlatmax + 1, leap, 0);
+        if (ACFLG==1) wavelength(&lsmask, time, NLONMIN, NLONMAX + 1, nlatmin, nlatmax + 1, leap, 0);
 
       } else if ((LATMIN < 0) & (LATMAX < 0)) { // both on southern hemisphere
 
-        divergence(&lsmask, NLONMIN, NLONMAX + 1, nlatmin, nlatmax + 1, leap, 1);
-        wavelength(&lsmask, time, NLONMIN, NLONMAX + 1, nlatmin, nlatmax + 1, leap, 1);
+        if (DIVFLG==1) divergence(&lsmask, NLONMIN, NLONMAX + 1, nlatmin, nlatmax + 1, leap, 1);
+        if (ACFLG==1) wavelength(&lsmask, time, NLONMIN, NLONMAX + 1, nlatmin, nlatmax + 1, leap, 1);
 
       } else if (LATMIN > -5) { // latitude minimum in forbidden band
 
-        divergence(&lsmask, NLONMIN, NLONMAX + 1, nlatmin, nlat5 + 1, leap, 0);
-        wavelength(&lsmask, time, NLONMIN, NLONMAX + 1, nlatmin, nlat5 + 1, leap, 0);
+        if (DIVFLG==1) divergence(&lsmask, NLONMIN, NLONMAX + 1, nlatmin, nlat5 + 1, leap, 0);
+        if (ACFLG==1) wavelength(&lsmask, time, NLONMIN, NLONMAX + 1, nlatmin, nlat5 + 1, leap, 0);
 
       } else if (LATMAX < 5) { // latitude maximum in forbidden band
 
-        divergence(&lsmask, NLONMIN, NLONMAX + 1, slat5, nlatmax + 1, leap, 1);
-        wavelength(&lsmask, time, NLONMIN, NLONMAX + 1, slat5, nlatmax + 1, leap, 1);
+        if (DIVFLG==1) divergence(&lsmask, NLONMIN, NLONMAX + 1, slat5, nlatmax + 1, leap, 1);
+        if (ACFLG==1) wavelength(&lsmask, time, NLONMIN, NLONMAX + 1, slat5, nlatmax + 1, leap, 1);
 
       } else { // general case with two valid hemispheres
 
-        divergence(&lsmask, NLONMIN, NLONMAX + 1, nlatmin, nlat5 + 1, leap, 0);
-        if (ACFLG==1) {
-          wavelength(&lsmask, time, NLONMIN, NLONMAX + 1, nlatmin, nlat5 + 1, leap, 0);
-        }
+        if (DIVFLG==1) divergence(&lsmask, NLONMIN, NLONMAX + 1, nlatmin, nlat5 + 1, leap, 0);
+        if (ACFLG==1) wavelength(&lsmask, time, NLONMIN, NLONMAX + 1, nlatmin, nlat5 + 1, leap, 0);
 
-        divergence(&lsmask, NLONMIN, NLONMAX + 1, slat5, nlatmax + 1, leap, 1);
-        if (ACFLG==1) {
-          wavelength(&lsmask, time, NLONMIN, NLONMAX + 1, slat5, nlatmax + 1, leap, 1);
-        }
+        if (DIVFLG==1) divergence(&lsmask, NLONMIN, NLONMAX + 1, slat5, nlatmax + 1, leap, 1);
+        if (ACFLG==1) wavelength(&lsmask, time, NLONMIN, NLONMAX + 1, slat5, nlatmax + 1, leap, 1);
 
       }
     }
