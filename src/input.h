@@ -25,6 +25,7 @@
 // run the hybrid extension
 #define HYBRIDFLG 1
 // atocorrelation flag
+// the autocorrelatio mode with ACFLG=1 is an experimental feature and not reliable yet
 #define ACFLG 0
 
 // paths to dynamic data;

@@ -11,7 +11,6 @@
 #include "../lib/structs.h"
 #include "../lib/slicer.h"
 #include "save.h"
-#include "input.h"
 #include "header.h"
 #include "../lib/dalloc.h"
 #include "../lib/macros.h"
@@ -25,7 +24,8 @@ int sum(size_t *array, int num){
   return((int) sum);
 }
 
-void initnc_write(dat2d *lsmask, int* time, int nxmin, int nxmax, int nymin, int nymax, int leap, int splitflag){
+void initnc_write(double *params, char **paths, dat2d *lsmask,
+                  int* time, int nxmin, int nxmax, int nymin, int nymax, int leap, int splitflag){
   int *timeSliceS, *timeSliceH, varID[7], nn = 0;
   size_t nt;
   size_t chunksize[3] = {28*24, CHUNK_LAT, CHUNK_LON};
@@ -50,19 +50,19 @@ void initnc_write(dat2d *lsmask, int* time, int nxmin, int nxmax, int nymin, int
     // set filename
     if (splitflag==0) {
       if (nn == 0) {
-        sprintf(filepath, AUXPATH_N, YEAR, 1);
+        sprintf(filepath, paths[3], (int) params[10], 1);
       } else if (nn == 13) {
-        sprintf(filepath, AUXPATH_N, YEAR, 12);
+        sprintf(filepath, paths[3], (int) params[10], 12);
       } else {
-        sprintf(filepath, OUTPATH_N, YEAR, nn);
+        sprintf(filepath, paths[5], (int) params[10], nn);
       }
     } else if (splitflag==1) {
       if (nn == 0) {
-        sprintf(filepath, AUXPATH_S, YEAR, 1);
+        sprintf(filepath, paths[4], (int) params[10], 1);
       } else if (nn == 13) {
-        sprintf(filepath, AUXPATH_S, YEAR, 12);
+        sprintf(filepath, paths[4], (int) params[10], 12);
       } else {
-        sprintf(filepath, OUTPATH_S, YEAR, nn);
+        sprintf(filepath, paths[6], (int) params[10], nn);
       }
     }
     // created the file with unlimited dimension
@@ -153,7 +153,8 @@ void initnc_write(dat2d *lsmask, int* time, int nxmin, int nxmax, int nymin, int
   free(lonSlice);
 }
 
-void initnc(dat2d *lsmask, int* time, int nxmin, int nxmax, int nymin, int nymax, int leap, int *nlat5, int *slat5){
+void initnc(double *params, char **paths, dat2d *lsmask,
+            int* time, int nxmin, int nxmax, int nymin, int nymax, int leap, int *nlat5, int *slat5){
   int splitflag = 0, nn;
 
   *nlat5 = NC_FILL_INT;
@@ -174,9 +175,9 @@ void initnc(dat2d *lsmask, int* time, int nxmin, int nxmax, int nymin, int nymax
 
   // write accordingly
   if (splitflag==0){
-    initnc_write(lsmask, time, nxmin, nxmax, nymin, nymax, leap, splitflag);
+    initnc_write(params, paths, lsmask, time, nxmin, nxmax, nymin, nymax, leap, splitflag);
   } else if (splitflag==1) {
-    initnc_write(lsmask, time, nxmin, nxmax, nymin, nymax, leap, splitflag);
+    initnc_write(params, paths, lsmask, time, nxmin, nxmax, nymin, nymax, leap, splitflag);
   } else if (splitflag==2) {
     // find nlat5 and slat5
     for (nn=nymin; nn<nymax; nn++){
@@ -207,34 +208,35 @@ void initnc(dat2d *lsmask, int* time, int nxmin, int nxmax, int nymin, int nymax
     // write two files with according nymin / nymax and according splitflag
     if (nymin == *nlat5) {
       // in this case the border at nymin is within 5 degr of the  the equator (NORTH)
-      initnc_write(lsmask, time, nxmin, nxmax, *slat5, nymax, leap, 1);
+      initnc_write(params, paths, lsmask, time, nxmin, nxmax, *slat5, nymax, leap, 1);
     } else if (nymax == *nlat5) {
       // in this case the border at nymax is within 5 degr of the  the equator (NORTH)
-      initnc_write(lsmask, time, nxmin, nxmax, nymin, *slat5, leap, 1);
+      initnc_write(params, paths, lsmask, time, nxmin, nxmax, nymin, *slat5, leap, 1);
     } else if (nymin == *slat5) {
       // in this case the border at nymin is within 5 degr of the  the equator (SOUTH)
-      initnc_write(lsmask, time, nxmin, nxmax, *nlat5, nymax, leap, 0);
+      initnc_write(params, paths, lsmask, time, nxmin, nxmax, *nlat5, nymax, leap, 0);
     } else if (nymax == *slat5) {
       // in this case the border at nymax is within 5 degr of the  the equator (SOUTH)
-      initnc_write(lsmask, time, nxmin, nxmax, nymin, *nlat5, leap, 0);
+      initnc_write(params, paths, lsmask, time, nxmin, nxmax, nymin, *nlat5, leap, 0);
     } else {
       // in this case there is a full domain that stretches on both sides of the equator
       if (lsmask->lat[nymin]<0) {
 
-        initnc_write(lsmask, time, nxmin, nxmax, nymin, *slat5, leap, 1);
-        initnc_write(lsmask, time, nxmin, nxmax, *nlat5, nymax, leap, 0);
+        initnc_write(params, paths, lsmask, time, nxmin, nxmax, nymin, *slat5, leap, 1);
+        initnc_write(params, paths, lsmask, time, nxmin, nxmax, *nlat5, nymax, leap, 0);
 
       } else if (lsmask->lat[nymin]>0) {
 
-        initnc_write(lsmask, time, nxmin, nxmax, *slat5, nymax, leap, 1);
-        initnc_write(lsmask, time, nxmin, nxmax, nymin, *nlat5, leap, 0);
+        initnc_write(params, paths, lsmask, time, nxmin, nxmax, *slat5, nymax, leap, 1);
+        initnc_write(params, paths, lsmask, time, nxmin, nxmax, nymin, *nlat5, leap, 0);
 
       }
     }
   }
 }
 
-void savePoint(dat2d *lsmask, double* uu, double* vv, double* mld, double* taux, double* tauy,
+void savePoint(double *params, char **paths, dat2d *lsmask,
+               double* uu, double* vv, double* mld, double* taux, double* tauy,
                int* time, int nxmin, int nx, int nymin, int nymax, int ny, int leap, int nlat5, int slat5){
   size_t days[14] = {31, 31, 28 + (size_t) leap, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31, 31};
   int nn = 0, nt = 0, mon = 0, ncID, retval, varID, mm = 0;
@@ -272,19 +274,19 @@ void savePoint(dat2d *lsmask, double* uu, double* vv, double* mld, double* taux,
     // set filepath depending on hemisphere
     if (lsmask->lat[ny]>5) {
       if (nn == 0) {
-        sprintf(filepath, AUXPATH_N, YEAR, 1);
+        sprintf(filepath, paths[3], (int) params[10], 1);
       } else if (nn == 13) {
-        sprintf(filepath, AUXPATH_N, YEAR, 12);
+        sprintf(filepath, paths[3], (int) params[10], 12);
       } else {
-        sprintf(filepath, OUTPATH_N, YEAR, nn);
+        sprintf(filepath, paths[5], (int) params[10], nn);
       }
     } else if (lsmask->lat[ny]<-5) {
       if (nn == 0) {
-        sprintf(filepath, AUXPATH_S, YEAR, 1);
+        sprintf(filepath, paths[4], (int) params[10], 1);
       } else if (nn == 13) {
-        sprintf(filepath, AUXPATH_S, YEAR, 12);
+        sprintf(filepath, paths[4], (int) params[10], 12);
       } else {
-        sprintf(filepath, OUTPATH_S, YEAR, nn);
+        sprintf(filepath, paths[6], (int) params[10], nn);
       }
     }
 
@@ -354,7 +356,8 @@ void savePoint(dat2d *lsmask, double* uu, double* vv, double* mld, double* taux,
   if (DBGFLG>2) {printf("  savePoint: return to main\n"); fflush(NULL);}
 }
 
-void savelh(dat2d *lsmask, double ***lh, int *time,
+void savelh(double *params, char **paths,
+            dat2d *lsmask, double ***lh, int *time,
             int nxmin, int nxmax, int nymin, int nymax, int leap, int hemflag){
   size_t days[12] = {31, 28 + (size_t) leap, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31};
   int nx, ny, nt, nint, ncID, retval, varID, nmonth = 0;
@@ -368,13 +371,13 @@ void savelh(dat2d *lsmask, double ***lh, int *time,
   lhTime = ialloc(lhTime, 14);
   for (nt=0; nt<14; nt++){
     if (nt==0){
-      tcon.tm_year = YEAR - 1901;
+      tcon.tm_year = (int) params[10] - 1901;
       tcon.tm_mon = 11;
     } else if (nt==13) {
-      tcon.tm_year = YEAR - 1899;
+      tcon.tm_year = (int) params[10] - 1899;
       tcon.tm_mon = 0;
     } else {
-      tcon.tm_year = YEAR - 1900;
+      tcon.tm_year = (int) params[10] - 1900;
       tcon.tm_mon = nt-1;
     }
     tcon.tm_mday = 15;
@@ -395,9 +398,9 @@ void savelh(dat2d *lsmask, double ***lh, int *time,
 
     // set filepath as above
     if (hemflag==0) {
-      sprintf(filepath, OUTPATH_N, YEAR, nmonth+1);
+      sprintf(filepath, paths[5], (int) params[10], nmonth+1);
     } else if (hemflag==1) {
-      sprintf(filepath, OUTPATH_S, YEAR, nmonth+1);
+      sprintf(filepath, paths[6], (int) params[10], nmonth+1);
     }
 
     // set hyperslab indicees
@@ -447,7 +450,9 @@ void savelh(dat2d *lsmask, double ***lh, int *time,
   if (DBGFLG>2) {printf("  savelh: done.\n"); fflush(NULL);}
 }
 
-void savePointHybrid(dat2d *lsmask, dat1d *Eout, int ny, int nymin, int nymax, int nx, int nxmin, int leap, int nlat5, int slat5){
+void savePointHybrid(double *params, char **paths,
+                     dat2d *lsmask, dat1d *Eout,
+                     int ny, int nymin, int nymax, int nx, int nxmin, int leap, int nlat5, int slat5){
   size_t days[14] = {31, 28 + (size_t) leap, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31};
   int nmonth = 0, ncID, retval, varID;
   int iterbounds[2];
@@ -468,9 +473,9 @@ void savePointHybrid(dat2d *lsmask, dat1d *Eout, int ny, int nymin, int nymax, i
 
     // set filepath as above
     if (lsmask->lat[ny]>5) {
-      sprintf(filepath, OUTPATH_N, YEAR, nmonth+1);
+      sprintf(filepath, paths[5], (int) params[10], nmonth+1);
     } else if (lsmask->lat[ny]<-5) {
-      sprintf(filepath, OUTPATH_S, YEAR, nmonth+1);
+      sprintf(filepath, paths[6], (int) params[10], nmonth+1);
     } else {
       // if lat of point is in forbidden latitude band throw an error
       GENERR

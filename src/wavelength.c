@@ -10,13 +10,13 @@
 #include "../lib/structs.h"
 #include "../lib/dalloc.h"
 #include "../lib/stats.h"
-#include "input.h"
 #include "header.h"
 #include "save.h"
 #include "divergence.h"
 #include "../lib/macros.h"
 
-void loadw(dat3d *ww, dat2d *lsmask, int nlatmin, int nlonmin, int nlon, int ndlon, int nmonth, int leap, int hemflag){
+void loadw(double *params, char **paths, dat3d *ww, dat2d *lsmask,
+           int nlatmin, int nlonmin, int nlon, int ndlon, int nmonth, int leap, int hemflag){
   // load slice of vertical velocity from data files
   int retval, ncID, varID, nn, mm;
   size_t days[12] = {31, 28 + (size_t) leap, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31};
@@ -26,24 +26,24 @@ void loadw(dat3d *ww, dat2d *lsmask, int nlatmin, int nlonmin, int nlon, int ndl
   // set file to load from
   if (hemflag == 0) { // northern hemisphere
     if (nmonth == 0) {
-      sprintf(filepath, AUXPATH_N, YEAR, 1);
+      sprintf(filepath, paths[3], (int) params[10], 1);
       count[0] = days[0] * 24;
     } else if (nmonth == 13) {
-      sprintf(filepath, AUXPATH_N, YEAR, 12);
+      sprintf(filepath, paths[3], (int) params[10], 12);
       count[0] = days[11] * 24;
     } else {
-      sprintf(filepath, OUTPATH_N, YEAR, nmonth);
+      sprintf(filepath, paths[5], (int) params[10], nmonth);
       count[0] = days[nmonth - 1] * 24;
     }
   } else if (hemflag == 1) { // southern hemisphere
     if (nmonth == 0) {
-      sprintf(filepath, AUXPATH_S, YEAR, 1);
+      sprintf(filepath, paths[4], (int) params[10], 1);
       count[0] = days[0] * 24;
     } else if (nmonth == 13) {
-      sprintf(filepath, AUXPATH_S, YEAR, 12);
+      sprintf(filepath, paths[4], (int) params[10], 12);
       count[0] = days[11] * 24;
     } else {
-      sprintf(filepath, OUTPATH_S, YEAR, nmonth);
+      sprintf(filepath, paths[6], (int) params[10], nmonth);
       count[0] = days[nmonth - 1] * 24;
     }
   }
@@ -94,7 +94,7 @@ void loadw(dat3d *ww, dat2d *lsmask, int nlatmin, int nlonmin, int nlon, int ndl
   if ((retval = nc_close(ncID))) ERR(retval);
 }
 
-void advancew(dat3d *ww, dat2d *lsmask,
+void advancew(double *params, char **paths, dat3d *ww, dat2d *lsmask,
               int nlatmin, int nlonmin, int nlon, int ndlon, int nmonth, int leap, int hemflag){
   // advance by one index
   // load slice of vertical velocity from data files
@@ -122,24 +122,24 @@ void advancew(dat3d *ww, dat2d *lsmask,
   // set file to load from
   if (hemflag == 0) { // norhtern hemisphere
     if (nmonth == 0) {
-      sprintf(filepath, AUXPATH_N, YEAR, 1);
+      sprintf(filepath, paths[3], (int) params[10], 1);
       count[0] = days[0] * 24;
     } else if (nmonth == 13) {
-      sprintf(filepath, AUXPATH_N, YEAR, 12);
+      sprintf(filepath, paths[3], (int) params[10], 12);
       count[0] = days[11] * 24;
     } else {
-      sprintf(filepath, OUTPATH_N, YEAR, nmonth);
+      sprintf(filepath, paths[5], (int) params[10], nmonth);
       count[0] = days[nmonth - 1] * 24;
     }
   } else if (hemflag == 1) { // southern hemisphere
     if (nmonth == 0) {
-      sprintf(filepath, AUXPATH_S, YEAR, 1);
+      sprintf(filepath, paths[4], (int) params[10], 1);
       count[0] = days[0] * 24;
     } else if (nmonth == 13) {
-      sprintf(filepath, AUXPATH_S, YEAR, 12);
+      sprintf(filepath, paths[4], (int) params[10], 12);
       count[0] = days[11] * 24;
     } else {
-      sprintf(filepath, OUTPATH_S, YEAR, nmonth);
+      sprintf(filepath, paths[6], (int) params[10], nmonth);
       count[0] = days[nmonth - 1] * 24;
     }
   }
@@ -263,7 +263,8 @@ void autocorr(dat2d *lsmask, dat3d *ww, double ***distances, double **lh,
   free(norm);
 }
 
-void wavelength(dat2d *lsmask, int *time, int nxmin, int nxmax, int nymin, int nymax, int leap, int hemflag){
+void wavelength(double *params, char **paths, dat2d *lsmask, int *time,
+                int nxmin, int nxmax, int nymin, int nymax, int leap, int hemflag){
   size_t days[14] = {31, 31, 28 + (size_t) leap, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31, 31};
   dat3d ww;
   size_t ntime;
@@ -309,7 +310,8 @@ void wavelength(dat2d *lsmask, int *time, int nxmin, int nxmax, int nymin, int n
   for (nmonth=0; nmonth<14; nmonth++) {
     ntime = days[nmonth] * 24;
 
-    if (ACFLG==1){ // only run autocorrelation if corresponding flag is set to 1
+    // the autocorrelation mode is not reliable yet
+    if ((int) params[3] == 1){ // only run autocorrelation if corresponding flag is set to 1
       // init vertical velocity
       ww.data = dalloc3(ww.data, (size_t) nlat, (size_t) 2*ndlon, ntime);
       ww.nlat = nlat;
@@ -328,9 +330,9 @@ void wavelength(dat2d *lsmask, int *time, int nxmin, int nxmax, int nymin, int n
         // load vertical velocity band
         int nyy, mxx;
         if (mm==nxmin){
-          loadw(&ww, lsmask, nymin, nxmin, mm, ndlon, nmonth, leap, hemflag);
+          loadw(params, paths, &ww, lsmask, nymin, nxmin, mm, ndlon, nmonth, leap, hemflag);
         } else {
-          advancew(&ww, lsmask, nymin, nxmin, mm, ndlon, nmonth, leap, hemflag);
+          advancew(params, paths, &ww, lsmask, nymin, nxmin, mm, ndlon, nmonth, leap, hemflag);
         }
 
         // do calculation on band (either over half band or just over one column dependeing on edgeflag)
@@ -343,7 +345,7 @@ void wavelength(dat2d *lsmask, int *time, int nxmin, int nxmax, int nymin, int n
     } else { // if flag does not permit autocorrelation set wavelength to constant value
       for (nn=0; nn<nlat; nn++){
         for (mm=0; mm<nxmax-nxmin; mm++){
-          lh[nmonth][nn][mm] = WLNGTH;
+          lh[nmonth][nn][mm] = params[16];
         }
       }
     }
@@ -352,7 +354,7 @@ void wavelength(dat2d *lsmask, int *time, int nxmin, int nxmax, int nymin, int n
   }
 
   // interpolate lh and save to netcdf file
-  savelh(lsmask, lh, time, nxmin, nxmax, nymin, nymax, leap, hemflag);
+  savelh(params, paths, lsmask, lh, time, nxmin, nxmax, nymin, nymax, leap, hemflag);
   dfree3(lh, 14, (size_t) nlat);
 
   if (DBGFLG>2) {printf("  wavelength: return to main\n");fflush(NULL);}

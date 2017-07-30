@@ -14,13 +14,30 @@
 #include "getdata.h"
 #include "header.h"
 #include "lsm.h"
-#include "input.h"
 #include "divergence.h"
 #include "wavelength.h"
 #include "hybrid.h"
+#include "readtxt.h"
 #include "../lib/macros.h"
 
 int main(void) {
+  if (DBGFLG > 2) {
+    printf("main: get parameters from setup file\n");
+    fflush(NULL);
+  }
+
+  // set expected amount of parameters AND paths (valLen) as well as amount of expected paths (pathLen)
+  // Even if variables are set read-only (const) the compiler does not considers it a build time constant
+  // and throws an error. Hence I defined them in a macro in header.h. They can be changed there.
+  int valLen = VALLEN;
+  int pathLen = PATHLEN;
+
+  char *paths[pathLen];
+
+  // the length of the parameter array is exact. Increase if adding new (double) parameters
+  double params[17];
+  readtxt(params, paths, valLen, pathLen);
+
   if (DBGFLG > 2) {
     printf("main: initialize variables\n");
     fflush(NULL);
@@ -29,7 +46,7 @@ int main(void) {
   int nn, mm, ll;
 
   // constants
-  double rho0 = RHO, r0, f0;
+  double r0, f0;
 
   // subsetting related variables
   int NLATMIN, NLATMAX, nlatmin, nlatmax, NLONMIN, NLONMAX, nlat5=NC_FILL_INT, slat5=NC_FILL_INT, hemflag;
@@ -47,8 +64,8 @@ int main(void) {
   if (DBGFLG > 2) {printf("main: set time axis\n");fflush(NULL);}
 
   // check for leap years
-  if (YEAR%4==0){
-    if (YEAR%100!=0){
+  if ((int) params[10]%4==0){
+    if ((int) params[10]%100!=0){
       leap  = 1;
     } else {
       leap  = 0;
@@ -63,13 +80,14 @@ int main(void) {
           uu[10248 + leap * 24], vv[10248 + leap * 24];
   int time[10248 + leap * 24];
 
+  // initialize variables with zeros
   for (nn=0; nn< (10248 + leap * 24); nn++){
     mld[nn] = taux[nn] = tauy[nn] = 0.0;
     time[nn] = 0;
   }
 
   // set basic time constructor
-  tcon.tm_year = YEAR - 1901;
+  tcon.tm_year = (int) params[10] - 1901;
   tcon.tm_mon = 11;
   tcon.tm_mday = 1;
   tcon.tm_hour = 1;
@@ -78,64 +96,75 @@ int main(void) {
   // tcon.tm_gmtoff = 0;
   tcon.tm_isdst = 0;
 
+  // set reference time from time costructor
   time_t referenceTime;
   referenceTime = mktime(&tcon);
+
+  // use reference time to set time axis
   for (nn=0; nn< ((365 + 62 + leap) * 24); nn++){
     time[nn] = (int) referenceTime + nn*3600;
-
   }
 
   if (DBGFLG > 1) {printf("main: check if domain is valid\n");fflush(NULL);}
 
-  if ((LATMIN>-5)&(LATMAX<5)) {
+  // if the domain is within the 5 degree band give error
+  if (((int) params[11]>-5)&((int) params[12]<5)) {
     DOMAINERR
   }
 
   if (DBGFLG > 0) {printf("main: set land sea mask\n");fflush(NULL);}
-  dat2d lsmask = lsm();
+
+  // allocate and inititate land sea mask
+  dat2d lsmask = lsm(paths);
 
   if (DBGFLG>1) {printf("main: get subset\n"); fflush(NULL);}
+
+  // find indices of subset in land sea mask
   NLATMIN = NLATMAX = NLONMIN = NLONMAX = 0;
   minimum = maximum = 180;
-  for (nn=0; nn<lsmask.nlat; nn++){ // iterate over all latitudes
-    if (minimum>fabs(lsmask.lat[nn]-LATMIN)) {
+
+  // iterate over all latitudes
+  for (nn=0; nn<lsmask.nlat; nn++){
+    if (minimum>fabs(lsmask.lat[nn]-(int) params[11])) {
       NLATMIN = nn;
-      minimum = fabs(lsmask.lat[nn]-LATMIN);
+      minimum = fabs(lsmask.lat[nn]-(int) params[11]);
     }
-    if (maximum>fabs(lsmask.lat[nn]-LATMAX)){
+    if (maximum>fabs(lsmask.lat[nn]-(int) params[12])){
       NLATMAX = nn;
-      maximum = fabs(lsmask.lat[nn]-LATMAX);
+      maximum = fabs(lsmask.lat[nn]-(int) params[12]);
     }
   }
   // correct if nearest neighbor is outside given interval
   if (NLATMAX<NLATMIN) {
-    if (lsmask.lat[NLATMIN] < LATMIN) NLATMIN -= 1;
-    if (lsmask.lat[NLATMAX] > LATMAX) NLATMAX += 1;
+    if (lsmask.lat[NLATMIN] < (int) params[11]) NLATMIN -= 1;
+    if (lsmask.lat[NLATMAX] > (int) params[12]) NLATMAX += 1;
   } else {
-    if (lsmask.lat[NLATMIN] < LATMIN) NLATMIN += 1;
-    if (lsmask.lat[NLATMAX] > LATMAX) NLATMAX -= 1;
+    if (lsmask.lat[NLATMIN] < (int) params[11]) NLATMIN += 1;
+    if (lsmask.lat[NLATMAX] > (int) params[12]) NLATMAX -= 1;
   }
 
+  // iterate over all longitudes
   minimum = maximum = 360;
-  for (nn=0; nn<lsmask.nlon; nn++){ // iterate over all longitudes
-    if (minimum>fabs(lsmask.lon[nn]-LONMIN)){
+  for (nn=0; nn<lsmask.nlon; nn++){
+    if (minimum>fabs(lsmask.lon[nn]-(int) params[13])){
       NLONMIN = nn;
-      minimum = fabs(lsmask.lon[nn]-LONMIN);
+      minimum = fabs(lsmask.lon[nn]-(int) params[13]);
     }
-    if (maximum>fabs(lsmask.lon[nn]-LONMAX)){
+    if (maximum>fabs(lsmask.lon[nn]-(int) params[14])){
       NLONMAX = nn;
-      maximum = fabs(lsmask.lon[nn]-LONMAX);
+      maximum = fabs(lsmask.lon[nn]-(int) params[14]);
     }
   }
   // correct if nearest neighbor is outside given interval
-  if (lsmask.lon[NLONMIN] < LONMIN) NLONMIN +=1;
-  if (lsmask.lon[NLONMAX] > LONMAX) NLONMAX -=1;
+  if (lsmask.lon[NLONMIN] < (int) params[13]) NLONMIN +=1;
+  if (lsmask.lon[NLONMAX] > (int) params[14]) NLONMAX -=1;
 
   // lat array may be sorted reversely
   nlatmin = (((NLATMIN)<(NLATMAX))?(NLATMIN):(NLATMAX));
   nlatmax = (((NLATMIN)>(NLATMAX))?(NLATMIN):(NLATMAX));
 
   if (DBGFLG>2) {printf("main: set fftw plans\n"); fflush(NULL);}
+
   // prepare FFTs
   // set frequencies
   aux = (fftw_complex*) fftw_malloc(sizeof(fftw_complex) * DFFT_LEN);
@@ -144,6 +173,7 @@ int main(void) {
   HAUX = (fftw_complex*) fftw_malloc(sizeof(fftw_complex) * (365+leap)*24);
   hfreqs = dalloc(hfreqs, (size_t) ((365 + leap) * 24));
 
+  // set frequencies
   for (nn=0; nn<DFFT_LEN/2; nn++) {
     freqs[nn] = 2 * PI / 3600.0 * nn / DFFT_LEN;
   }
@@ -167,10 +197,10 @@ int main(void) {
 
 
   // be aware that the lat array may be sorted inversely
-  if (SLABFLG==1) { // init nc files only if slab model is supposed to run.
+  if ((int) params[0] == 1) { // init nc files only if slab model is supposed to run.
     if (DBGFLG>2) {printf("main: init data files\n"); fflush(NULL);}
-    initnc(&lsmask, time, NLONMIN, NLONMAX + 1, nlatmin, nlatmax + 1, leap, &nlat5, &slat5);
-  } else if (SLABFLG==0) { // only load nlat5 and slat5; data should already be written.
+    initnc(params, paths, &lsmask, time, NLONMIN, NLONMAX + 1, nlatmin, nlatmax + 1, leap, &nlat5, &slat5);
+  } else if ((int) params[0] == 0) { // only load nlat5 and slat5; data should already be written.
     // set nlat5 and slat5
     for (nn=nlatmin; nn<nlatmax; nn++){
       if (dabs(lsmask.lat[nn]) < 5) break;
@@ -193,13 +223,16 @@ int main(void) {
     }
 
     // if nlat5 and slat5 did not receive a value throw an error
+    // this is a heuristic check
     if ((nlat5==NC_FILL_INT)&(slat5==NC_FILL_INT)){
       GENERR
     }
   }
 
+  // allocate and initialize the damping coefficient from Park et al 2009
   dat2d_2 damp = initdamping(&lsmask);
 
+  // print settings of model before running
   if (DBGFLG>0) {
     printf("main: subset boundaries are set by:\n");
     printf("     (latmin, latmax, lonmin, lonmax):\n");
@@ -207,7 +240,7 @@ int main(void) {
            lsmask.lat[NLATMIN], lsmask.lat[NLATMAX], lsmask.lon[NLONMIN], lsmask.lon[NLONMAX]);
   }
 
-  if (SLABFLG==1) {
+  if ((int) params[0] == 1) {
     if (DBGFLG > 0) {
       printf("main: running slab model\n");
     }
@@ -226,26 +259,27 @@ int main(void) {
             fflush(NULL);
           }
           // load stress and mixed layer depth data
-          getdata(nn, mm, leap, time, mld, taux, tauy);
+          getdata(params, paths, nn, mm, leap, time, mld, taux, tauy);
           // set damping parameter
           r0 = damping(&damp, nn, lsmask.lon[mm]);
           // set Coriolis frequency
           f0 = coriolis(lsmask.lat[nn]);
           // calculate u and v
-          solve(fft, ifft, r0, f0, rho0, leap, taux, tauy, mld, freqs, aux, AUX);
+          solve(fft, ifft, r0, f0, params[15], leap, taux, tauy, mld, freqs, aux, AUX);
           // set velocities
           for (ll = 0; ll < ((365 + 62 + leap) * 24); ll++) {
             uu[ll] = aux[ll][0];
             vv[ll] = aux[ll][1];
           }
           // write out mld, time, u and v
-          savePoint(&lsmask, uu, vv, mld, taux, tauy, time, NLONMIN, mm, nlatmin, nlatmax, nn, leap, nlat5, slat5);
+          savePoint(params, paths, &lsmask, uu, vv, mld, taux, tauy, time,
+                    NLONMIN, mm, nlatmin, nlatmax, nn, leap, nlat5, slat5);
         }
       }
     }
   }
 
-  if (HYBRIDFLG==1) {
+  if ((int) params[1] == 1) {
     if (DBGFLG > 0) {
       printf("main: run hybrid extension\n");
       fflush(NULL);
@@ -255,70 +289,79 @@ int main(void) {
       fflush(NULL);
     }
 
-    // get mid-point divergences on both hemispheres
-    if (NLATMIN == nlatmin) {
-      if ((LATMIN > 0) & (LATMAX > 0)) { // both on northern hemisphere
+    // get mid-point divergences and horizontal wavelengths on both hemispheres
+    // parameters are set according to domain setup
+    // possible setups:
+    //  - minimum and maximum latitude on northern hemisphere
+    //  - minimum and maximum latitude on southern hemisphere
+    //  - the minimum latitude is in the forbidden 5 degree band
+    //  - the maximum latitude is in the forbidden 5 degree band
+    //  - full case with two valid hemispheres
+    // this setups are possible with descending or ascending latitude array
 
-        if (DIVFLG==1) divergence(&lsmask, NLONMIN, NLONMAX + 1, nlatmin, nlatmax + 1, leap, 0);
-        if (ACFLG==1) wavelength(&lsmask, time, NLONMIN, NLONMAX + 1, nlatmin, nlatmax + 1, leap, 0);
+    if (NLATMIN == nlatmin) { // ascending latitude array
+      if (((int) params[11] > 0) & ((int) params[12] > 0)) { // both on northern hemisphere
 
-      } else if ((LATMIN < 0) & (LATMAX < 0)) { // both on southern hemisphere
+        if ((int) params[2] == 1) divergence(params, paths, &lsmask, NLONMIN, NLONMAX + 1, nlatmin, nlatmax + 1, leap, 0);
+        if ((int) params[3] == 1) wavelength(params, paths, &lsmask, time, NLONMIN, NLONMAX + 1, nlatmin, nlatmax + 1, leap, 0);
 
-        if (DIVFLG==1) divergence(&lsmask, NLONMIN, NLONMAX + 1, nlatmin, nlatmax + 1, leap, 1);
-        if (ACFLG==1) wavelength(&lsmask, time, NLONMIN, NLONMAX + 1, nlatmin, nlatmax + 1, leap, 1);
+      } else if (((int) params[11] < 0) & ((int) params[12] < 0)) { // both on southern hemisphere
 
-      } else if (LATMIN > -5) { // latitude minimum in forbidden band
+        if ((int) params[2] == 1) divergence(params, paths, &lsmask, NLONMIN, NLONMAX + 1, nlatmin, nlatmax + 1, leap, 1);
+        if ((int) params[3] == 1) wavelength(params, paths, &lsmask, time, NLONMIN, NLONMAX + 1, nlatmin, nlatmax + 1, leap, 1);
 
-        if (DIVFLG==1) divergence(&lsmask, NLONMIN, NLONMAX + 1, nlat5, nlatmax + 1, leap, 0);
-        if (ACFLG==1) wavelength(&lsmask, time, NLONMIN, NLONMAX + 1, nlat5, nlatmax + 1, leap, 0);
+      } else if ((int) params[11] > -5) { // latitude minimum in forbidden band
 
-      } else if (LATMAX < 5) { // latitude maximum in forbidden band
+        if ((int) params[2] == 1) divergence(params, paths, &lsmask, NLONMIN, NLONMAX + 1, nlat5, nlatmax + 1, leap, 0);
+        if ((int) params[3] == 1) wavelength(params, paths, &lsmask, time, NLONMIN, NLONMAX + 1, nlat5, nlatmax + 1, leap, 0);
 
-        if (DIVFLG==1) divergence(&lsmask, NLONMIN, NLONMAX + 1, nlatmin, slat5 + 1, leap, 1);
-        if (ACFLG==1) wavelength(&lsmask, time, NLONMIN, NLONMAX + 1, nlatmin, slat5 + 1, leap, 1);
+      } else if ((int) params[12] < 5) { // latitude maximum in forbidden band
+
+        if ((int) params[2] == 1) divergence(params, paths, &lsmask, NLONMIN, NLONMAX + 1, nlatmin, slat5 + 1, leap, 1);
+        if ((int) params[3] == 1) wavelength(params, paths, &lsmask, time, NLONMIN, NLONMAX + 1, nlatmin, slat5 + 1, leap, 1);
 
       } else { // general case with two valid hemispheres
 
-        if (DIVFLG==1) divergence(&lsmask, NLONMIN, NLONMAX + 1, nlat5, nlatmax + 1, leap, 0);
-        if (ACFLG==1) wavelength(&lsmask, time, NLONMIN, NLONMAX + 1, nlat5, nlatmax + 1, leap, 0);
+        if ((int) params[2] == 1) divergence(params, paths, &lsmask, NLONMIN, NLONMAX + 1, nlat5, nlatmax + 1, leap, 0);
+        if ((int) params[3] == 1) wavelength(params, paths, &lsmask, time, NLONMIN, NLONMAX + 1, nlat5, nlatmax + 1, leap, 0);
 
-        if (DIVFLG==1) divergence(&lsmask, NLONMIN, NLONMAX + 1, nlatmin, slat5 + 1, leap, 1);
-        if (ACFLG==1) wavelength(&lsmask, time, NLONMIN, NLONMAX + 1, nlatmin, slat5 + 1, leap, 1);
+        if ((int) params[2] == 1) divergence(params, paths, &lsmask, NLONMIN, NLONMAX + 1, nlatmin, slat5 + 1, leap, 1);
+        if ((int) params[3] == 1) wavelength(params, paths, &lsmask, time, NLONMIN, NLONMAX + 1, nlatmin, slat5 + 1, leap, 1);
 
       }
-    } else if (NLATMAX == nlatmin) {
-      if ((LATMIN > 0) & (LATMAX > 0)) { // both on northern hemisphere
+    } else if (NLATMAX == nlatmin) { // descending latitude array
+      if (((int) params[11] > 0) & ((int) params[12] > 0)) { // both on northern hemisphere
 
-        if (DIVFLG==1) divergence(&lsmask, NLONMIN, NLONMAX + 1, nlatmin, nlatmax + 1, leap, 0);
-        if (ACFLG==1) wavelength(&lsmask, time, NLONMIN, NLONMAX + 1, nlatmin, nlatmax + 1, leap, 0);
+        if ((int) params[2] == 1) divergence(params, paths, &lsmask, NLONMIN, NLONMAX + 1, nlatmin, nlatmax + 1, leap, 0);
+        if ((int) params[3] == 1) wavelength(params, paths, &lsmask, time, NLONMIN, NLONMAX + 1, nlatmin, nlatmax + 1, leap, 0);
 
-      } else if ((LATMIN < 0) & (LATMAX < 0)) { // both on southern hemisphere
+      } else if (((int) params[11] < 0) & ((int) params[12] < 0)) { // both on southern hemisphere
 
-        if (DIVFLG==1) divergence(&lsmask, NLONMIN, NLONMAX + 1, nlatmin, nlatmax + 1, leap, 1);
-        if (ACFLG==1) wavelength(&lsmask, time, NLONMIN, NLONMAX + 1, nlatmin, nlatmax + 1, leap, 1);
+        if ((int) params[2] == 1) divergence(params, paths, &lsmask, NLONMIN, NLONMAX + 1, nlatmin, nlatmax + 1, leap, 1);
+        if ((int) params[3] == 1) wavelength(params, paths, &lsmask, time, NLONMIN, NLONMAX + 1, nlatmin, nlatmax + 1, leap, 1);
 
-      } else if (LATMIN > -5) { // latitude minimum in forbidden band
+      } else if ((int) params[11] > -5) { // latitude minimum in forbidden band
 
-        if (DIVFLG==1) divergence(&lsmask, NLONMIN, NLONMAX + 1, nlatmin, nlat5 + 1, leap, 0);
-        if (ACFLG==1) wavelength(&lsmask, time, NLONMIN, NLONMAX + 1, nlatmin, nlat5 + 1, leap, 0);
+        if ((int) params[2] == 1) divergence(params, paths, &lsmask, NLONMIN, NLONMAX + 1, nlatmin, nlat5 + 1, leap, 0);
+        if ((int) params[3] == 1) wavelength(params, paths, &lsmask, time, NLONMIN, NLONMAX + 1, nlatmin, nlat5 + 1, leap, 0);
 
-      } else if (LATMAX < 5) { // latitude maximum in forbidden band
+      } else if ((int) params[12] < 5) { // latitude maximum in forbidden band
 
-        if (DIVFLG==1) divergence(&lsmask, NLONMIN, NLONMAX + 1, slat5, nlatmax + 1, leap, 1);
-        if (ACFLG==1) wavelength(&lsmask, time, NLONMIN, NLONMAX + 1, slat5, nlatmax + 1, leap, 1);
+        if ((int) params[2] == 1) divergence(params, paths, &lsmask, NLONMIN, NLONMAX + 1, slat5, nlatmax + 1, leap, 1);
+        if ((int) params[3] == 1) wavelength(params, paths, &lsmask, time, NLONMIN, NLONMAX + 1, slat5, nlatmax + 1, leap, 1);
 
       } else { // general case with two valid hemispheres
 
-        if (DIVFLG==1) divergence(&lsmask, NLONMIN, NLONMAX + 1, nlatmin, nlat5 + 1, leap, 0);
-        if (ACFLG==1) wavelength(&lsmask, time, NLONMIN, NLONMAX + 1, nlatmin, nlat5 + 1, leap, 0);
+        if ((int) params[2] == 1) divergence(params, paths, &lsmask, NLONMIN, NLONMAX + 1, nlatmin, nlat5 + 1, leap, 0);
+        if ((int) params[3] == 1) wavelength(params, paths, &lsmask, time, NLONMIN, NLONMAX + 1, nlatmin, nlat5 + 1, leap, 0);
 
-        if (DIVFLG==1) divergence(&lsmask, NLONMIN, NLONMAX + 1, slat5, nlatmax + 1, leap, 1);
-        if (ACFLG==1) wavelength(&lsmask, time, NLONMIN, NLONMAX + 1, slat5, nlatmax + 1, leap, 1);
+        if ((int) params[2] == 1) divergence(params, paths, &lsmask, NLONMIN, NLONMAX + 1, slat5, nlatmax + 1, leap, 1);
+        if ((int) params[3] == 1) wavelength(params, paths, &lsmask, time, NLONMIN, NLONMAX + 1, slat5, nlatmax + 1, leap, 1);
 
       }
     }
 
-    // set struct for data time series
+    // set structs for time series of N, w, horiz. wavelength lh and radiated energy Eout
     dat1d lh;
     dat1d ww;
     dat1d NN;
@@ -329,6 +372,7 @@ int main(void) {
     for (nn = 0; nn < lh.ntime; nn++) lh.time[nn] = (double) time[nn + 31 * 24];
     NN.time = ww.time = Eout.time = lh.time;
 
+    // allocate data
     lh.data = dalloc(lh.data, (size_t) lh.ntime);
     ww.data = dalloc(lh.data, (size_t) lh.ntime);
     NN.data = dalloc(lh.data, (size_t) lh.ntime);
@@ -338,11 +382,11 @@ int main(void) {
       printf("main: begin loop over points\n");
       fflush(NULL);
     }
-    int nt;
+
     // calculate hybrid model on all points
     for (nn = nlatmin + 1; nn < nlatmax; nn++) {
       for (mm = NLONMIN + 1; mm < NLONMAX; mm++) {
-
+        // check if point has neighbors, if not skip
         if (lsmask.data[nn - 1][mm] +
             lsmask.data[nn + 1][mm] +
             lsmask.data[nn][mm - 1] +
@@ -353,9 +397,8 @@ int main(void) {
             fflush(NULL);
           }
 
-
           // get data
-          getdataHybrid(&lsmask, &lh, &ww, &NN, nn, nlatmin, mm, NLONMIN, leap, nlat5, slat5);
+          getdataHybrid(params, paths, &lsmask, &lh, &ww, &NN, nn, nlatmin, mm, NLONMIN, leap, nlat5, slat5);
 
           if (lsmask.lat[nn]<-5){
             // this is a debugging test
@@ -366,15 +409,15 @@ int main(void) {
           f0 = coriolis(lsmask.lat[nn]);
 
           // get energy flux for point
-          hybrid(&lh, &ww, &NN, &Eout, hfreqs, f0, HAUX, haux, hfft, hifft, leap);
+          hybrid(params, &lh, &ww, &NN, &Eout, hfreqs, f0, HAUX, haux, hfft, hifft, leap);
 
           // save data to nc file
-          savePointHybrid(&lsmask, &Eout, nn, nlatmin, nlatmax, mm, NLONMIN, leap, nlat5, slat5);
+          savePointHybrid(params, paths, &lsmask, &Eout, nn, nlatmin, nlatmax, mm, NLONMIN, leap, nlat5, slat5);
         }
       }
     }
 
-    // free up memory from hybrid extension
+    // free up memory from data used in hybrid extension
     free(lh.data);
     free(lh.time); // frees time axes of all data structs
     free(NN.data);
@@ -384,6 +427,7 @@ int main(void) {
 
   if (DBGFLG>2) {printf("main: clean up memory\n");fflush(NULL);}
 
+  // free up memory for clean exit
   fftw_destroy_plan(fft);
   fftw_destroy_plan(ifft);
   fftw_destroy_plan(hfft);
@@ -396,6 +440,6 @@ int main(void) {
   free(damp.y1); // note tha damp.xx is free'd at lsmask.lat
   free(damp.y2);
 
-
+  // if you made it here exit with success
   return(EXIT_SUCCESS);
 }

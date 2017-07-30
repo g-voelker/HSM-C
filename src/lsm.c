@@ -5,9 +5,8 @@
 #include "../lib/structs.h"
 #include "../lib/macros.h"
 #include "header.h"
-#include "input.h"
 
-dat2d lsm() {
+dat2d lsm(char **paths) {
 
   // initialize variables
   int dataID, latID, lonID, ncID, nn, mm;
@@ -74,7 +73,7 @@ dat2d lsm() {
   if (DBGFLG>2) { printf("  lsm: load MLD and check land sea mask\n"); fflush(NULL);}
 
   // open file
-  sprintf(filename, MLDPATH, 1);
+  sprintf(filename, paths[2], 1);
   if ((retval = nc_open(filename, NC_NOWRITE, &ncID))) ERR(retval);
 
   // get id of dataset

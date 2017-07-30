@@ -11,7 +11,6 @@
 #include "../lib/constants.h"
 #include "../lib/macros.h"
 #include "header.h"
-#include "input.h"
 
 double dist(double lon1, double lon2, double lat1, double lat2){
   double dd = 0.0;
@@ -22,7 +21,8 @@ double dist(double lon1, double lon2, double lat1, double lat2){
   return(dd);
 }
 
-void divergence(dat2d *lsmask, int nxmin, int nxmax, int nymin, int nymax, int leap, int hemflag){
+void divergence(dat2d *lsmask, double *params, char **paths,
+                int nxmin, int nxmax, int nymin, int nymax, int leap, int hemflag){
   // aux arrays
   double **uu, **vv, *aux, dys[nymax - nymin - 1], dx[nymax - nymin];
   double *vc, *vn, *vs, *uc, *ue, *uw, *ww, *mld;
@@ -69,19 +69,19 @@ void divergence(dat2d *lsmask, int nxmin, int nxmax, int nymin, int nymax, int l
     // note: the order of computation doesn't matter here
     if (hemflag==0) { // northern hemisphere
       if (nmonth == 0) {
-        sprintf(filepath, AUXPATH_N, YEAR,  1);
+        sprintf(filepath, paths[3], (int) params[10],  1);
       } else if (nmonth == 13) {
-        sprintf(filepath, AUXPATH_N, YEAR, 12);
+        sprintf(filepath, paths[3], (int) params[10], 12);
       } else {
-        sprintf(filepath, OUTPATH_N, YEAR, nmonth);
+        sprintf(filepath, paths[5], (int) params[10], nmonth);
       }
     } else if (hemflag==1) { // southern hemisphere
       if (nmonth == 0) {
-        sprintf(filepath, AUXPATH_S, YEAR, 1);
+        sprintf(filepath, paths[4], (int) params[10], 1);
       } else if (nmonth == 13) {
-        sprintf(filepath, AUXPATH_S, YEAR, 12);
+        sprintf(filepath, paths[4], (int) params[10], 12);
       } else {
-        sprintf(filepath, OUTPATH_S, YEAR, nmonth);
+        sprintf(filepath, paths[4], (int) params[10], nmonth);
       }
     } else { // if on no known hemisphere throw error
       GENERR

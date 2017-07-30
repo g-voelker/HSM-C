@@ -34,7 +34,6 @@ set(SOURCE_FILES
         src/getdata.c
         src/getdata.h
         src/header.h
-        src/input.h
         src/lsm.c
         src/lsm.h
         src/solveode.c
@@ -46,7 +45,9 @@ set(SOURCE_FILES
         src/divergence.h
         src/wavelength.c
         src/wavelength.h
-        src/hybrid.c src/hybrid.h)
+        src/hybrid.c
+        src/hybrid.h
+        src/readtxt.c)
 
 add_executable(EIS ${SOURCE_FILES})
 

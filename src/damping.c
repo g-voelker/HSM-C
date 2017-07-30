@@ -5,7 +5,7 @@
 #include <stdio.h>
 #include "../lib/constants.h"
 #include "../lib/structs.h"
-#include "input.h"
+#include "header.h"
 
 double damping(dat2d_2 *damp, int nlat, double lon) {
   if (DBGFLG>2) { printf("  damping: setting local damping time scale\n"); fflush(NULL);}

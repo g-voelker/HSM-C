@@ -4,11 +4,13 @@
 
 extern void correct(double *input, int length);
 
-extern void getdata(int nlat, int nlon, int leap,
+extern void getdata(double *params, char **paths,
+                    int nlat, int nlon, int leap,
                     int *time, double *mld,
                     double *taux, double *tauy );
 
 extern dat2d_2 initdamping(dat2d *lsmask);
 
-extern void getdataHybrid(dat2d *lsmask, dat1d *lh, dat1d *ww, dat1d *NN,
+extern void getdataHybrid(double *params, char **paths,
+                          dat2d *lsmask, dat1d *lh, dat1d *ww, dat1d *NN,
                           int ny, int nymin, int nx, int nxmin, int leap, int nlat5, int slat5);

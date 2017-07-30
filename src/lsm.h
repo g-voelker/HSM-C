@@ -1,1 +1,1 @@
-extern dat2d lsm();
+extern dat2d lsm(char **paths);

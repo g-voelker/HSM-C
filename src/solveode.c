@@ -2,7 +2,6 @@
 #include <math.h>
 #include <stdlib.h>
 #include "header.h"
-#include "input.h"
 
 void solve(fftw_plan fft, fftw_plan ifft,
            double r0, double f0, double rho0, int leap,

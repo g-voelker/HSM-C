@@ -6,7 +6,6 @@
 #include "../lib/dalloc.h"
 #include "../lib/ialloc.h"
 #include "../lib/structs.h"
-#include "input.h"
 #include "header.h"
 #include "save.h"
 // #include <grib_api.h>
@@ -53,7 +52,8 @@ void correct(double *input, int length){
  * correct stress values as they come in averages
  */
 
-void getdata(int nlat, int nlon, int leap,
+void getdata(double *params, char **paths,
+             int nlat, int nlon, int leap,
              int *time, double *mld,
              double *taux, double *tauy ){
   int nmonth, retval, ncID, dataID, timeID, timeDimID, nn, mm, natts[2] = {0,0};
@@ -68,7 +68,7 @@ void getdata(int nlat, int nlon, int leap,
   if (DBGFLG>2) { printf("  getdata: set MLD time\n"); fflush(NULL);}
 
   // set basic time constructor
-  tcon.tm_year = YEAR - 1900;
+  tcon.tm_year = (int) params[10] - 1900;
   tcon.tm_mon = 0;
   tcon.tm_mday = 0;
   tcon.tm_wday = 0;
@@ -86,7 +86,7 @@ void getdata(int nlat, int nlon, int leap,
   mmld = dalloc(mmld, 16);
 
   // set hours of mid months
-  tcon.tm_year = YEAR - 1901;
+  tcon.tm_year = (int) params[10] - 1901;
   tcon.tm_mon = 10;
   tcon.tm_mday = 15;
   itime[0] = mktime(&tcon);
@@ -94,7 +94,7 @@ void getdata(int nlat, int nlon, int leap,
   tcon.tm_mon = 11;
   itime[1] = mktime(&tcon);
 
-  tcon.tm_year = YEAR - 1900;
+  tcon.tm_year = (int) params[10] - 1900;
   for (nn=2; nn<14; nn++){
     tcon.tm_mon = (nn - 1) % 12;
     tcon.tm_mday = 15;
@@ -102,7 +102,7 @@ void getdata(int nlat, int nlon, int leap,
     itime[nn] = mktime(&tcon);
   }
 
-  tcon.tm_year = YEAR - 1899;
+  tcon.tm_year = (int) params[10] - 1899;
   tcon.tm_mon = 0;
   tcon.tm_mday = 15;
   itime[14] = mktime(&tcon);
@@ -113,7 +113,7 @@ void getdata(int nlat, int nlon, int leap,
   if (DBGFLG>2) { printf("  getdata: load MLD\n"); fflush(NULL);}
   // load mixed layer depth
   for (nmonth=0; nmonth<12; nmonth++){
-    sprintf(filepath, MLDPATH, nmonth+1);
+    sprintf(filepath, paths[2], nmonth+1);
     // open regridded netCDF file
     if ((retval = nc_open(filepath, NC_NOWRITE, &ncID))) ERR(retval);
     // get id of dataset
@@ -151,11 +151,11 @@ void getdata(int nlat, int nlon, int leap,
   nt = 0;
   for (nmonth=0; nmonth<14; nmonth++) {
       if (nmonth==0) {
-          sprintf(filepath, STRSPATH, YEAR-1, 12);
+          sprintf(filepath, paths[1], (int) params[10]-1, 12);
       } else if (nmonth==13){
-          sprintf(filepath, STRSPATH, YEAR+1, 1);
+          sprintf(filepath, paths[1], (int) params[10]+1, 1);
       } else {
-          sprintf(filepath, STRSPATH, YEAR, nmonth);
+          sprintf(filepath, paths[1], (int) params[10], nmonth);
       }
 
       // open netcdf file
@@ -242,7 +242,7 @@ void getdata(int nlat, int nlon, int leap,
   }
 
   // correct stress values
-  if (STRSCOR!=0) {
+  if ((int) params[4]!=0) {
     if (DBGFLG>2) { printf("  getdata: correcting NCEP-CFSR stress data\n"); fflush(NULL);}
     correct(taux, ntcum);
     correct(tauy, ntcum);
@@ -333,7 +333,9 @@ dat2d_2 initdamping(dat2d *lsmask){
   return(data);
 }
 
-void getdataHybrid(dat2d *lsmask, dat1d *lh, dat1d *ww, dat1d *NN, int ny, int nymin, int nx, int nxmin, int leap, int nlat5, int slat5){
+void getdataHybrid(double* params, char **paths,
+                   dat2d *lsmask, dat1d *lh, dat1d *ww, dat1d *NN,
+                   int ny, int nymin, int nx, int nxmin, int leap, int nlat5, int slat5){
   // indices
   size_t days[12] = {31, 28 + (size_t) leap, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31};
   int nmonth, nt, nint;
@@ -358,13 +360,13 @@ void getdataHybrid(dat2d *lsmask, dat1d *lh, dat1d *ww, dat1d *NN, int ny, int n
   buoyancyTime = ialloc(buoyancyTime, 14);
   for (nt=0; nt<14; nt++){
     if (nt==0){
-      tcon.tm_year = YEAR - 1901;
+      tcon.tm_year = (int) params[10] - 1901;
       tcon.tm_mon = 11;
     } else if (nt==13) {
-      tcon.tm_year = YEAR - 1899;
+      tcon.tm_year = (int) params[10] - 1899;
       tcon.tm_mon = 0;
     } else {
-      tcon.tm_year = YEAR - 1900;
+      tcon.tm_year = (int) params[10] - 1900;
       tcon.tm_mon = nt-1;
     }
     tcon.tm_mday = 15;
@@ -384,7 +386,7 @@ void getdataHybrid(dat2d *lsmask, dat1d *lh, dat1d *ww, dat1d *NN, int ny, int n
     aux[nmonth]=0.0;
 
     // set filepath
-    sprintf(filepath, NPATH, nmonth);
+    sprintf(filepath, paths[0], nmonth);
 
     // open file
     if ((retval = nc_open(filepath, NC_NOWRITE, &ncID))) ERR(retval);
@@ -428,21 +430,21 @@ void getdataHybrid(dat2d *lsmask, dat1d *lh, dat1d *ww, dat1d *NN, int ny, int n
 
     if ((nlat5==NC_FILL_INT)|(slat5==NC_FILL_INT)) {
       if (lsmask->lat[ny] > 0) {
-        sprintf(filepath, OUTPATH_N, YEAR, nmonth+1);
+        sprintf(filepath, paths[5], (int) params[10], nmonth+1);
       } else if (lsmask->lat[ny] < 0) {
-        sprintf(filepath, OUTPATH_S, YEAR, nmonth+1);
+        sprintf(filepath, paths[6], (int) params[10], nmonth+1);
       }
       start[1] = (size_t) (ny-nymin);
     } else {
       if (lsmask->lat[ny] > lsmask->lat[nlat5]) {
-        sprintf(filepath, OUTPATH_N, YEAR, nmonth + 1);
+        sprintf(filepath, paths[5], (int) params[10], nmonth + 1);
         if (lsmask->lat[nymin] > lsmask->lat[nlat5]) {
           start[1] = (size_t) (ny - nymin);
         } else if (lsmask->lat[nymin] <= lsmask->lat[nlat5]) {
           start[1] = (size_t) (ny - nlat5);
         }
       } else if (lsmask->lat[ny] < lsmask->lat[slat5]) {
-        sprintf(filepath, OUTPATH_S, YEAR, nmonth + 1);
+        sprintf(filepath, paths[6], (int) params[10], nmonth + 1);
         if (lsmask->lat[nymin] < lsmask->lat[slat5]) {
           start[1] = (size_t) (ny - nymin);
         } else if (lsmask->lat[nymin] >= lsmask->lat[slat5]) {
@@ -464,7 +466,7 @@ void getdataHybrid(dat2d *lsmask, dat1d *lh, dat1d *ww, dat1d *NN, int ny, int n
 
     // get variable
     if ((retval = nc_get_vara_double(ncID, varID[0], start, count, &ww->data[startIndex]))) ERR(retval);
-    if (ACFLG==1) {
+    if ((int) params[3]==1) {
       if ((retval = nc_get_vara_double(ncID, varID[1], start, count, &lh->data[startIndex]))) ERR(retval);
     }
 
@@ -472,9 +474,9 @@ void getdataHybrid(dat2d *lsmask, dat1d *lh, dat1d *ww, dat1d *NN, int ny, int n
     if ((retval = nc_close(ncID))) ERR(retval);
   }
 
-  if (ACFLG!=1) {
+  if ((int) params[3]!=1) {
     for (nt=0; nt<lh->ntime; nt++){
-      lh->data[nt] = WLNGTH;
+      lh->data[nt] = params[16];
     }
   }
 

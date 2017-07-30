@@ -1,5 +1,12 @@
 #include "../lib/constants.h"
 
+// debug (verbose) level
+#define DBGFLG 3
+
+// set number of expected values and paths here (workaround for the compiler)
+#define VALLEN 19
+#define PATHLEN 7
+
 // netcdf error macros
 #define ERR(e) {printf("Error: %s\n", nc_strerror(e)); exit(EXIT_FAILURE);}
 
@@ -8,6 +15,8 @@
 #define DOMAINERR {printf("Error: The domain given is invalid. Slab model aborted.\n"); exit(EXIT_FAILURE);};
 #define DIMERR {printf("Error: too few points in given domain. Hybrid model aborted.\n"); exit(EXIT_FAILURE);}
 #define VALERR {printf("Error: size of domain too small for autocorrelation calculation. Hybrid model aborted.\n"); exit(EXIT_FAILURE);}
+#define IOERR {printf("Error: could not read input file. Setup aborted.\n"); exit(EXIT_FAILURE);};
+#define VARERR(should, is) {printf("Error: expected variable \"%s\" but received \"%s\" instead. Setup aborted.\n", should, is);exit(EXIT_FAILURE);};
 
 // convert between degrees to radians
 #define DEG2RAD(deg) ((deg)*PI/180.0)

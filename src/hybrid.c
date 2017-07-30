@@ -9,9 +9,10 @@
 #include "../lib/dalloc.h"
 #include "../lib/macros.h"
 #include "header.h"
-#include "input.h"
 
-void hybrid(dat1d *lh, dat1d *ww, dat1d *NN, dat1d *Eout, double *freqs, double f0,
+void hybrid(double *params,
+            dat1d *lh, dat1d *ww, dat1d *NN, dat1d *Eout,
+            double *freqs, double f0,
             fftw_complex *AUX, fftw_complex *aux,
             fftw_plan fft, fftw_plan ifft, int leap){
   double *window, avgN;
@@ -67,7 +68,7 @@ void hybrid(dat1d *lh, dat1d *ww, dat1d *NN, dat1d *Eout, double *freqs, double 
 
   for (nt = 0; nt < (365 + leap) * 24; nt++) {
     Eout->data[nt] =
-            RHO * (NN->data[nt] - dabs(f0)) * lh->data[nt] / PI2 * (aux[nt][0] * aux[nt][0] + aux[nt][1] * aux[nt][1]);
+            params[15] * (NN->data[nt] - dabs(f0)) * lh->data[nt] / PI2 * (aux[nt][0] * aux[nt][0] + aux[nt][1] * aux[nt][1]);
   }
 
   free(window);
