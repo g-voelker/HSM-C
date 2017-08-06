@@ -49,9 +49,9 @@ set(SOURCE_FILES
         src/hybrid.h
         src/readtxt.c)
 
-add_executable(EIS ${SOURCE_FILES})
+add_executable(HSM-C ${SOURCE_FILES})
 
-target_link_libraries(EIS netcdf fftw3 m)
+target_link_libraries(HSM-C netcdf fftw3 m)
 
 # set folder to copy executables to
 # set(PROJECT_BINARY_DIR ${PROJECT_SOURCE_DIR}/bin)

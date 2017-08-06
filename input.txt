@@ -1,0 +1,58 @@
+# This is the parameters file to supply HSM-C with the corresponding run parameters.
+# Commented and blank lines can be randomly placed and will be ignored.
+
+
+##
+# FLAGS
+# The flags are essentially switches to control what the model does.
+
+# run the classical slab model
+SLABFLG 1
+
+# run the hybrid exension
+HYBRIDFLG 1
+
+# calculate the divergence of the horizontal velocity to get the vertical velocity
+DIVFLG 1
+
+# get the horizontal wavelength using the autocorrelation method (EXPERIMENTAL)
+ACFLG 0
+
+# correct CFSR wind stress data format
+STRSCOR 1
+
+
+##
+# PARAMETERS
+
+YEAR 1989
+LATMIN -80
+LATMAX 80
+LONMIN 0
+LONMAX 360
+
+
+##
+# CONSTANTS
+
+# reference density of seawater
+RHO 1027.0
+# constant horizontal wavelength
+WLNGTH 400e3
+
+
+##
+# FILE PATHS
+# In file paths, %d and %02d will be replaced by the year and month, respectively. The paths suggested here assume the
+# binary to be called from the source directory.
+
+# source paths
+NPATH data/MIMOC/MIMOC_ML_v2.2_N_month%02d_regrid.nc
+STRSPATH data/NCEP-CFSR/stress/wndstrs.gdas.%d%02d.fast.nc
+MLDPATH data/MIMOC/MIMOC_ML_v2.2_CT_SA_MLP_month%02d_regrid.nc
+
+# target paths
+AUXPATH_N results/%d_%02d_aux_n.nc
+AUXPATH_S results/%d_%02d_aux_s.nc
+OUTPATH_N results/%d_%02d_n.nc
+OUTPATH_S results/%d_%02d_s.nc

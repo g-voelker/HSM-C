@@ -1,5 +1,0 @@
-#define mCabssqr(x) ((x.r)*(x.r) + (x.i)*(x.i))
-#define mCmulR(x,y) ((x.r)*(y.r) - (x.i)*(y.i))
-#define mCmulI(x,y) ((x.r)*(y.i) + (x.i)*(y.r))
-#define mCmulcR(x,y) ((x.r)*(y.r) + (x.i)*(y.i))
-#define mCmulcI(x,y) ((x.i)*(y.r) - (x.r)*(y.i))
