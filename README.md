@@ -19,9 +19,10 @@
    The versions indicated in brackets are the stable version at the development time of the code - other versions might work but are not tested to date.
    To compile the code you need to clone the code (or download and unpack), navigate to the root directory and run
 
-```cmake CMakeLists.txt
-
-make Makefile```
+```
+cmake CMakeLists.txt
+make Makefile
+```
 
    Alternatively, an IDE like Visual Studio, Eclipse or CLion can be used. On linux machines the compilation will be straight forward as c compilers are commonly part of the distribution or easily accessible. On windows / Mac a compiler and the libraries will have to be installed manually and communicate accordingly. I recommend to have a look at cygwin (Win) / macports (Mac) to collect the requirements.
 
@@ -32,11 +33,15 @@ make Makefile```
 
    Run the code from the command line with (UNIX)
 
-```./HSM-C```
+```
+./HSM-C
+```
 
    or (Windows)
 
-```./HSM-C.exe```
+```
+./HSM-C.exe
+```
 
 ## Modification of the Model
 
