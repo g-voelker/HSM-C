@@ -24,6 +24,8 @@ set(SOURCE_FILES
         lib/dalloc.h
         lib/ialloc.c
         lib/ialloc.h
+        lib/salloc.c
+        lib/salloc.h
         lib/structs.h
         lib/slicer.c
         lib/slicer.h

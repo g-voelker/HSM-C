@@ -7,6 +7,7 @@
 #include <string.h>
 #include "../lib/constants.h"
 #include "../lib/dalloc.h"
+#include "../lib/salloc.h"
 #include "../lib/structs.h"
 #include "save.h"
 #include "damping.h"
@@ -32,10 +33,13 @@ int main(void) {
   int valLen = VALLEN;
   int pathLen = PATHLEN;
 
-  char *paths[pathLen];
+  // allocate array of strings
+  char** paths;
+  paths = salloc2(paths, (size_t) pathLen, MAXCHARLEN);
 
   // the length of the parameter array is exact. Increase if adding new (double) parameters
-  double params[17];
+  double* params;
+  params = dalloc(params, 17);
   readtxt(params, paths, valLen, pathLen);
 
   if (DBGFLG > 2) {
@@ -439,6 +443,8 @@ int main(void) {
   dfree2(lsmask.data, (size_t) lsmask.nlat);
   free(damp.y1); // note tha damp.xx is free'd at lsmask.lat
   free(damp.y2);
+  free(params);
+  sfree2(paths, (size_t) pathLen);
 
   // if you made it here exit with success
   return(EXIT_SUCCESS);

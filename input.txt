@@ -43,8 +43,8 @@ WLNGTH 400e3
 
 ##
 # FILE PATHS
-# In file paths, %d and %02d will be replaced by the year and month, respectively. The paths suggested here assume the
-# binary to be called from the source directory.
+# In file paths, %d and %02d will be replaced by the year and month, respectively. The paths
+# suggested here assume the binary to be called from the source directory.
 
 # source paths
 NPATH data/MIMOC/MIMOC_ML_v2.2_N_month%02d_regrid.nc

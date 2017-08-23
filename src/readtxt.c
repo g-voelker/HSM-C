@@ -79,6 +79,63 @@ double retval(char* buffer, char* expect){
   }
 }
 
+void retpath(char* buffer, char* expect, char* path){
+
+  // allocate variables
+  size_t lenExpect, lenBuffer, lenPath;
+  int ns, match = 1;
+
+  // get length of expected variable
+  lenExpect = strlen(expect);
+
+  // get length of total buffer and value
+  lenBuffer = strlen(buffer);
+  lenPath = lenBuffer - lenExpect;
+
+  // get length of variable name in setup file
+  size_t lenVar;
+  for (ns=0; ns<lenBuffer; ns++) {
+    if (buffer[ns] == ' ') {
+      lenVar = (size_t) ns;
+    }
+  }
+
+  // check if the length of the variable in file matches length of expected variable
+  if (lenVar==lenExpect) {
+    // check if characters of the line match the expected variable
+    for (ns = 0; ns < lenExpect; ns++) {
+      // if any character does not match: set (int) match to 0 and exit loop
+      if (buffer[ns] != expect[ns]) {
+        match = 0;
+        break;
+      }
+    }
+  } else {
+    // if the length is wrong we do not have a match.
+    match = 0;
+  }
+
+  // read value if there is a match
+  // there is no heuristic check for the success of reading the right value!
+  if (match==1) {
+    // allocate buffer for path
+    char bufferPath[lenPath];
+
+    // fill the buffer for the path with characters
+    for (ns = 0; ns<lenPath; ns++)
+      bufferPath[ns] = buffer[ns + lenExpect];
+
+    // copy into array of paths but do not write more than maximal string length
+    strncpy(path, bufferPath, MAXCHARLEN);
+
+  } else {
+
+    // if the variable is not the expected throw an error
+    // replace this error with the value error macro in the main code
+    VARERR(expect, buffer);fflush(NULL);
+  }
+}
+
 void map(double* values, double *params, int valLen, int pathLen) {
   // map the values to the params array
   // if you add more initial parameters you will need to assign a slot in the parameters array here.
@@ -164,7 +221,8 @@ void readtxt(double* params, char **paths, int valLen, int pathLen) {
         if (nread - shift < valLen - pathLen) {
           values[nread - shift] = retval(buffer, expect[nread - shift]);
         } else {
-          paths[nread - shift + pathLen - valLen] = buffer;
+          // paths (i.e. strings / arrays of chars) have to be written to the pointer
+          retpath(buffer, expect[nread - shift], paths[nread - shift + pathLen - valLen]);
         }
       }
       nread++;
