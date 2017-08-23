@@ -26,8 +26,8 @@
 #define MAXCHARLEN 100
 
 // define static paths
-#define DAMPPATH "../static/park_et_al.nc"
-#define LSMPATH "../static/lsm-hres.nc"
+#define DAMPPATH "static/park_et_al.nc"
+#define LSMPATH "static/lsm-hres.nc"
 
 // the length of the DFTs is set to 2^4 * 3^6 in accordance with the maximum cutoff for long damping times.
 // this value is set to preserve performance while making sure the cutoff is long enough
