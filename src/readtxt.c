@@ -157,7 +157,7 @@ void readtxt(double* params, char **paths, int valLen, int pathLen) {
     // read the whole file
     while (getstring(buffer, buflen, ptrFile) != 0) {
       // ignore comment lines beginning with # as well as blank lines
-      if ((buffer[0] == '#') || (buffer[0] == '\0')) {
+      if ((buffer[0] == '#') || (buffer[0] == '\0') || (buffer[0] == '\n')) {
         shift++;
       } else {
         // put the next parameter into the corresponding slot in the parameter array
