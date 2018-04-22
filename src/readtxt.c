@@ -126,7 +126,7 @@ void retpath(char* buffer, char* expect, char* path){
       bufferPath[ns] = buffer[ns + lenExpect];
 
     // copy into array of paths but do not write more than maximal string length
-    strncpy(path, bufferPath, MAXCHARLEN);
+    strncpy(path, bufferPath + 1, MAXCHARLEN);
 
   } else {
 
@@ -216,7 +216,6 @@ void readtxt(double* params, char **paths, int valLen, int pathLen) {
       // ignore comment lines beginning with # as well as blank lines
       if ((buffer[0] == '#') || (buffer[0] == '\0') || (buffer[0] == '\n')) {
         shift++;
-        printf("Skipping Line.\n");
       } else {
         // put the next parameter into the corresponding slot in the parameter array
         if (nread - shift < valLen - pathLen) {
@@ -225,7 +224,6 @@ void readtxt(double* params, char **paths, int valLen, int pathLen) {
           // paths (i.e. strings / arrays of chars) have to be written to the pointer
           retpath(buffer, expect[nread - shift], paths[nread - shift + pathLen - valLen]);
         }
-        printf("Using Line: %s\n", buffer);
       }
       nread++;
     }
