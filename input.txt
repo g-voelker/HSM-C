@@ -47,9 +47,9 @@ WLNGTH 400e3
 # suggested here assume the binary to be called from the source directory.
 
 # source paths
-NPATH data/MIMOC/MIMOC_ML_v2.2_N_month%02d_regrid.nc
-STRSPATH data/NCEP-CFSR/stress/wndstrs.gdas.%d%02d.fast.nc
-MLDPATH data/MIMOC/MIMOC_ML_v2.2_CT_SA_MLP_month%02d_regrid.nc
+NPATH ../../Data/MIMOC/MIMOC_ML_v2.2_N_month%02d_regrid.nc
+STRSPATH ../../Data/NCEP-CFSR/stress/wndstrs.gdas.%d%02d.fast.nc
+MLDPATH ../../Data/MIMOC/MIMOC_ML_v2.2_CT_SA_MLP_month%02d_regrid.nc
 
 # target paths
 AUXPATH_N results/%d_%02d_aux_n.nc
