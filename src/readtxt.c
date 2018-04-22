@@ -128,6 +128,13 @@ void retpath(char* buffer, char* expect, char* path){
     // copy into array of paths but do not write more than maximal string length
     strncpy(path, bufferPath + 1, MAXCHARLEN);
 
+    // replace newline characters with null chars to avoid cross platform errors
+    for (ns=0; ns<MAXCHARLEN; ns++) {
+      if (path[ns] == '\n') {
+        path[ns] = '\0';
+      }
+    }
+
   } else {
 
     // if the variable is not the expected throw an error
