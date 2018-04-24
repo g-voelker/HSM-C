@@ -344,6 +344,10 @@ int main(void) {
     } else if (NLATMAX == nlatmin) { // descending latitude array
       if (((int) params[11] > 0) & ((int) params[12] > 0)) { // both on northern hemisphere
 
+        for (nn=0; nn < NLATMAX; nn++) {
+          printf("nn, lat[nn]: %d\t%f", nn, lsmask.lat[nn]);fflush(NULL);
+        }
+
         if ((int) params[2] == 1) divergence(params, paths, &lsmask, NLONMIN, NLONMAX + 1, nlatmin, nlatmax + 1, leap, 0);
         if ((int) params[3] == 1) wavelength(params, paths, &lsmask, time, NLONMIN, NLONMAX + 1, nlatmin, nlatmax + 1, leap, 0);
 
