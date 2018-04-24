@@ -74,7 +74,6 @@ dat2d lsm(char **paths) {
 
   // open file
   sprintf(filename, paths[2], 1);
-  printf("%s\n", filename);
   if ((retval = nc_open(filename, NC_NOWRITE, &ncID))) ERR(retval);
 
   // get id of dataset
