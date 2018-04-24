@@ -38,6 +38,7 @@ double retval(char* buffer, char* expect){
   for (ns=0; ns<lenBuffer; ns++) {
     if (buffer[ns] == ' ') {
       lenVar = (size_t) ns;
+      break;
     }
   }
 
