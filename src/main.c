@@ -297,7 +297,7 @@ int main(void) {
       fflush(NULL);
     }
     if (DBGFLG > 1) {
-      printf("main: get vertical velocities and horizotal wavelengths\n");
+      printf("main: get vertical velocities and horizontal wavelengths\n");
       fflush(NULL);
     }
 
@@ -314,31 +314,31 @@ int main(void) {
     if (NLATMIN == nlatmin) { // ascending latitude array
       if (((int) params[11] > 0) & ((int) params[12] > 0)) { // both on northern hemisphere
 
-        if ((int) params[2] == 1) divergence(params, paths, &lsmask, NLONMIN, NLONMAX + 1, nlatmin, nlatmax + 1, leap, 0);
-        if ((int) params[3] == 1) wavelength(params, paths, &lsmask, time, NLONMIN, NLONMAX + 1, nlatmin, nlatmax + 1, leap, 0);
+        if ((int) params[2] == 1) divergence(&lsmask, params, paths, NLONMIN, NLONMAX + 1, nlatmin, nlatmax + 1, leap, 0);
+        if ((int) params[3] == 1) wavelength(&lsmask, params, paths, time, NLONMIN, NLONMAX + 1, nlatmin, nlatmax + 1, leap, 0);
 
       } else if (((int) params[11] < 0) & ((int) params[12] < 0)) { // both on southern hemisphere
 
-        if ((int) params[2] == 1) divergence(params, paths, &lsmask, NLONMIN, NLONMAX + 1, nlatmin, nlatmax + 1, leap, 1);
-        if ((int) params[3] == 1) wavelength(params, paths, &lsmask, time, NLONMIN, NLONMAX + 1, nlatmin, nlatmax + 1, leap, 1);
+        if ((int) params[2] == 1) divergence(&lsmask, params, paths, NLONMIN, NLONMAX + 1, nlatmin, nlatmax + 1, leap, 1);
+        if ((int) params[3] == 1) wavelength(&lsmask, params, paths, time, NLONMIN, NLONMAX + 1, nlatmin, nlatmax + 1, leap, 1);
 
       } else if ((int) params[11] > -5) { // latitude minimum in forbidden band
 
-        if ((int) params[2] == 1) divergence(params, paths, &lsmask, NLONMIN, NLONMAX + 1, nlat5, nlatmax + 1, leap, 0);
-        if ((int) params[3] == 1) wavelength(params, paths, &lsmask, time, NLONMIN, NLONMAX + 1, nlat5, nlatmax + 1, leap, 0);
+        if ((int) params[2] == 1) divergence(&lsmask, params, paths, NLONMIN, NLONMAX + 1, nlat5, nlatmax + 1, leap, 0);
+        if ((int) params[3] == 1) wavelength(&lsmask, params, paths, time, NLONMIN, NLONMAX + 1, nlat5, nlatmax + 1, leap, 0);
 
       } else if ((int) params[12] < 5) { // latitude maximum in forbidden band
 
-        if ((int) params[2] == 1) divergence(params, paths, &lsmask, NLONMIN, NLONMAX + 1, nlatmin, slat5 + 1, leap, 1);
-        if ((int) params[3] == 1) wavelength(params, paths, &lsmask, time, NLONMIN, NLONMAX + 1, nlatmin, slat5 + 1, leap, 1);
+        if ((int) params[2] == 1) divergence(&lsmask, params, paths, NLONMIN, NLONMAX + 1, nlatmin, slat5 + 1, leap, 1);
+        if ((int) params[3] == 1) wavelength(&lsmask, params, paths, time, NLONMIN, NLONMAX + 1, nlatmin, slat5 + 1, leap, 1);
 
       } else { // general case with two valid hemispheres
 
-        if ((int) params[2] == 1) divergence(params, paths, &lsmask, NLONMIN, NLONMAX + 1, nlat5, nlatmax + 1, leap, 0);
-        if ((int) params[3] == 1) wavelength(params, paths, &lsmask, time, NLONMIN, NLONMAX + 1, nlat5, nlatmax + 1, leap, 0);
+        if ((int) params[2] == 1) divergence(&lsmask, params, paths, NLONMIN, NLONMAX + 1, nlat5, nlatmax + 1, leap, 0);
+        if ((int) params[3] == 1) wavelength(&lsmask, params, paths, time, NLONMIN, NLONMAX + 1, nlat5, nlatmax + 1, leap, 0);
 
-        if ((int) params[2] == 1) divergence(params, paths, &lsmask, NLONMIN, NLONMAX + 1, nlatmin, slat5 + 1, leap, 1);
-        if ((int) params[3] == 1) wavelength(params, paths, &lsmask, time, NLONMIN, NLONMAX + 1, nlatmin, slat5 + 1, leap, 1);
+        if ((int) params[2] == 1) divergence(&lsmask, params, paths, NLONMIN, NLONMAX + 1, nlatmin, slat5 + 1, leap, 1);
+        if ((int) params[3] == 1) wavelength(&lsmask, params, paths, time, NLONMIN, NLONMAX + 1, nlatmin, slat5 + 1, leap, 1);
 
       }
     } else if (NLATMAX == nlatmin) { // descending latitude array
@@ -348,31 +348,31 @@ int main(void) {
           printf("nn, lat[nn]: %d\t%f\n", nn, lsmask.lat[nn]);fflush(NULL);
         } */
 
-        if ((int) params[2] == 1) divergence(params, paths, &lsmask, NLONMIN, NLONMAX + 1, nlatmin, nlatmax + 1, leap, 0);
-        if ((int) params[3] == 1) wavelength(params, paths, &lsmask, time, NLONMIN, NLONMAX + 1, nlatmin, nlatmax + 1, leap, 0);
+        if ((int) params[2] == 1) divergence(&lsmask, params, paths, NLONMIN, NLONMAX + 1, nlatmin, nlatmax + 1, leap, 0);
+        if ((int) params[3] == 1) wavelength(&lsmask, params, paths, time, NLONMIN, NLONMAX + 1, nlatmin, nlatmax + 1, leap, 0);
 
       } else if (((int) params[11] < 0) & ((int) params[12] < 0)) { // both on southern hemisphere
 
-        if ((int) params[2] == 1) divergence(params, paths, &lsmask, NLONMIN, NLONMAX + 1, nlatmin, nlatmax + 1, leap, 1);
-        if ((int) params[3] == 1) wavelength(params, paths, &lsmask, time, NLONMIN, NLONMAX + 1, nlatmin, nlatmax + 1, leap, 1);
+        if ((int) params[2] == 1) divergence(&lsmask, params, paths, NLONMIN, NLONMAX + 1, nlatmin, nlatmax + 1, leap, 1);
+        if ((int) params[3] == 1) wavelength(&lsmask, params, paths, time, NLONMIN, NLONMAX + 1, nlatmin, nlatmax + 1, leap, 1);
 
       } else if ((int) params[11] > -5) { // latitude minimum in forbidden band
 
-        if ((int) params[2] == 1) divergence(params, paths, &lsmask, NLONMIN, NLONMAX + 1, nlatmin, nlat5 + 1, leap, 0);
-        if ((int) params[3] == 1) wavelength(params, paths, &lsmask, time, NLONMIN, NLONMAX + 1, nlatmin, nlat5 + 1, leap, 0);
+        if ((int) params[2] == 1) divergence(&lsmask, params, paths, NLONMIN, NLONMAX + 1, nlatmin, nlat5 + 1, leap, 0);
+        if ((int) params[3] == 1) wavelength(&lsmask, params, paths, time, NLONMIN, NLONMAX + 1, nlatmin, nlat5 + 1, leap, 0);
 
       } else if ((int) params[12] < 5) { // latitude maximum in forbidden band
 
-        if ((int) params[2] == 1) divergence(params, paths, &lsmask, NLONMIN, NLONMAX + 1, slat5, nlatmax + 1, leap, 1);
-        if ((int) params[3] == 1) wavelength(params, paths, &lsmask, time, NLONMIN, NLONMAX + 1, slat5, nlatmax + 1, leap, 1);
+        if ((int) params[2] == 1) divergence(&lsmask, params, paths, NLONMIN, NLONMAX + 1, slat5, nlatmax + 1, leap, 1);
+        if ((int) params[3] == 1) wavelength(&lsmask, params, paths, time, NLONMIN, NLONMAX + 1, slat5, nlatmax + 1, leap, 1);
 
       } else { // general case with two valid hemispheres
 
-        if ((int) params[2] == 1) divergence(params, paths, &lsmask, NLONMIN, NLONMAX + 1, nlatmin, nlat5 + 1, leap, 0);
-        if ((int) params[3] == 1) wavelength(params, paths, &lsmask, time, NLONMIN, NLONMAX + 1, nlatmin, nlat5 + 1, leap, 0);
+        if ((int) params[2] == 1) divergence(&lsmask, params, paths, NLONMIN, NLONMAX + 1, nlatmin, nlat5 + 1, leap, 0);
+        if ((int) params[3] == 1) wavelength(&lsmask, params, paths, time, NLONMIN, NLONMAX + 1, nlatmin, nlat5 + 1, leap, 0);
 
-        if ((int) params[2] == 1) divergence(params, paths, &lsmask, NLONMIN, NLONMAX + 1, slat5, nlatmax + 1, leap, 1);
-        if ((int) params[3] == 1) wavelength(params, paths, &lsmask, time, NLONMIN, NLONMAX + 1, slat5, nlatmax + 1, leap, 1);
+        if ((int) params[2] == 1) divergence(&lsmask, params, paths, NLONMIN, NLONMAX + 1, slat5, nlatmax + 1, leap, 1);
+        if ((int) params[3] == 1) wavelength(&lsmask, params, paths, time, NLONMIN, NLONMAX + 1, slat5, nlatmax + 1, leap, 1);
 
       }
     }

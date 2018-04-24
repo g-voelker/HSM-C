@@ -263,7 +263,7 @@ void autocorr(dat2d *lsmask, dat3d *ww, double ***distances, double **lh,
   free(norm);
 }
 
-void wavelength(double *params, char **paths, dat2d *lsmask, int *time,
+void wavelength(dat2d *lsmask, double *params, char **paths, int *time,
                 int nxmin, int nxmax, int nymin, int nymax, int leap, int hemflag){
   size_t days[14] = {31, 31, 28 + (size_t) leap, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31, 31};
   dat3d ww;
