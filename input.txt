@@ -25,11 +25,11 @@ STRSCOR 1
 ##
 # PARAMETERS
 
-YEAR 1989
-LATMIN -80
-LATMAX 80
-LONMIN 0
-LONMAX 360
+YEAR 2000
+LATMIN 30
+LATMAX 35
+LONMIN 300
+LONMAX 305
 
 
 ##
@@ -48,11 +48,11 @@ WLNGTH 400e3
 
 # source paths
 NPATH ../../Data/MIMOC/MIMOC_ML_v2.2_N_month%02d_regrid.nc
-STRSPATH ../../Data/NCEP-CFSR/stress/wndstrs.gdas.%d%02d.fast.nc
+STRSPATH ../../Data/NCEP-CFSR/wndstrs.gdas.%d%02d.fast.nc
 MLDPATH ../../Data/MIMOC/MIMOC_ML_v2.2_CT_SA_MLP_month%02d_regrid.nc
 
 # target paths
-AUXPATH_N results/%d_%02d_aux_n.nc
-AUXPATH_S results/%d_%02d_aux_s.nc
-OUTPATH_N results/%d_%02d_n.nc
-OUTPATH_S results/%d_%02d_s.nc
+AUXPATH_N ../../Results/test_%d_%02d_aux_n.nc
+AUXPATH_S ../../Results/test_%d_%02d_aux_s.nc
+OUTPATH_N ../../Results/test_%d_%02d_n.nc
+OUTPATH_S ../../Results/test_%d_%02d_s.nc
