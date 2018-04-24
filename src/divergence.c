@@ -24,8 +24,6 @@ double dist(double lon1, double lon2, double lat1, double lat2){
 void divergence(dat2d *lsmask, double *params, char **paths,
                 int nxmin, int nxmax, int nymin, int nymax, int leap, int hemflag){
 
-  printf("lsmask test: %f\n", lsmask->lat[0]);fflush(NULL);
-
   // aux arrays
   double **uu, **vv, *aux, dys[nymax - nymin - 1], dx[nymax - nymin];
   double *vc, *vn, *vs, *uc, *ue, *uw, *ww, *mld;
