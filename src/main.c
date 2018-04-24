@@ -156,8 +156,8 @@ int main(void) {
   }
 
   // the data requires positive longitudes within 0..360; correct if negative
-  if (params[13 < 0]) params[13] += 360;
-  if (params[14 < 0]) params[14] += 360;
+  if (params[13] < 0) params[13] += 360;
+  if (params[14] < 0) params[14] += 360;
 
   // iterate over all longitudes
   minimum = maximum = 360;
