@@ -112,11 +112,8 @@ void divergence(dat2d *lsmask, double *params, char **paths,
     }
 
     // iterate over lats and lons
-    printf("nmonth: %d\n", nmonth);fflush(NULL);
     for (nn = nymin+1; nn < nymax-1; nn++){
-//      printf("nlat: %d\n", nn);fflush(NULL);
       for (mm = nxmin+1; mm < nxmax-1; mm++){
-//        if (nn==271) printf("nlon: %d\n", mm);fflush(NULL);
         if (lsmask->data[nn-1][mm] +
             lsmask->data[nn+1][mm] +
             lsmask->data[nn][mm-1] +
