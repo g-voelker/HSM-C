@@ -43,6 +43,8 @@ void divergence(dat2d *lsmask, double *params, char **paths,
   if (DBGFLG>2) {printf("  divergence: calculate distances in grid\n");fflush(NULL);}
   // calculate distance grid
   for (nn=nymin; nn<(nymax-1); nn++){ // on staggered grid
+    printf("nymin: %d", nymin);fflush(NULL);
+    printf("nymax: %d", nymax);fflush(NULL);
     printf("nn: %d", nn);fflush(NULL);
     printf("lat[nn]: %f", lsmask->lat[nn]);fflush(NULL);
     printf("lat[nn]: %f", lsmask->lat[nn+1]);fflush(NULL);
