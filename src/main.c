@@ -33,9 +33,19 @@ int main(void) {
   int valLen = VALLEN;
   int pathLen = PATHLEN;
 
+  // iterator integers
+  int nn, mm, ll;
+
   // allocate array of strings
   char** paths;
   paths = salloc2(paths, (size_t) pathLen, MAXCHARLEN);
+
+  // initialize paths with null characters
+  for (nn = 0; nn < pathLen; nn++) {
+    for (mm = 0; mm < MAXCHARLEN; mm++) {
+      paths[nn][mm] = '\0';
+    }
+  }
 
   // the length of the parameter array is exact. Increase if adding new (double) parameters
   double* params;
@@ -46,8 +56,6 @@ int main(void) {
     printf("main: initialize variables\n");
     fflush(NULL);
   }
-  // iterator integers
-  int nn, mm, ll;
 
   // constants
   double r0, f0;
