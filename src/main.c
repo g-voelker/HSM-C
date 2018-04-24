@@ -137,13 +137,13 @@ int main(void) {
 
   // iterate over all latitudes
   for (nn=0; nn<lsmask.nlat; nn++){
-    if (minimum>fabs(lsmask.lat[nn]-(int) params[11])) {
+    if (minimum>fabs(lsmask.lat[nn] - params[11])) {
       NLATMIN = nn;
-      minimum = fabs(lsmask.lat[nn]-(int) params[11]);
+      minimum = fabs(lsmask.lat[nn] - params[11]);
     }
-    if (maximum>fabs(lsmask.lat[nn]-(int) params[12])){
+    if (maximum>fabs(lsmask.lat[nn] - params[12])){
       NLATMAX = nn;
-      maximum = fabs(lsmask.lat[nn]-(int) params[12]);
+      maximum = fabs(lsmask.lat[nn] - params[12]);
     }
   }
   // correct if nearest neighbor is outside given interval
@@ -155,16 +155,20 @@ int main(void) {
     if (lsmask.lat[NLATMAX] > (int) params[12]) NLATMAX -= 1;
   }
 
+  // the data requires positive longitudes within 0..360; correct if negative
+  if (params[13 < 0]) params[13] += 360;
+  if (params[14 < 0]) params[13] += 360;
+
   // iterate over all longitudes
   minimum = maximum = 360;
   for (nn=0; nn<lsmask.nlon; nn++){
-    if (minimum>fabs(lsmask.lon[nn]-(int) params[13])){
+    if (minimum>fabs(lsmask.lon[nn] - params[13])){
       NLONMIN = nn;
-      minimum = fabs(lsmask.lon[nn]-(int) params[13]);
+      minimum = fabs(lsmask.lon[nn] - params[13]);
     }
-    if (maximum>fabs(lsmask.lon[nn]-(int) params[14])){
+    if (maximum>fabs(lsmask.lon[nn] - params[14])){
       NLONMAX = nn;
-      maximum = fabs(lsmask.lon[nn]-(int) params[14]);
+      maximum = fabs(lsmask.lon[nn] - params[14]);
     }
   }
   // correct if nearest neighbor is outside given interval
